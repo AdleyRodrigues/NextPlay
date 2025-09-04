@@ -1,0 +1,53 @@
+### Teste RAWG - Busca por nome
+GET {{host}}/api/rawg/The Witcher 3
+
+### Descoberta de jogos - Exemplo básico
+POST {{host}}/api/discover
+Content-Type: application/json
+
+{
+  "vibe": ["relax", "historia"],
+  "duration": "medio",
+  "energy": "baixa",
+  "social": "solo",
+  "contentTone": "indiferente",
+  "controllerPreferred": null,
+  "lang": "indiferente",
+  "structure": "campaign",
+  "flavors": ["fantasia", "sci_fi"],
+  "limit": 20
+}
+
+### Descoberta de jogos - Jogos rápidos e competitivos
+POST {{host}}/api/discover
+Content-Type: application/json
+
+{
+  "vibe": ["competitivo", "raiva"],
+  "duration": "rapido",
+  "energy": "alta",
+  "social": "pvp",
+  "contentTone": "indiferente",
+  "controllerPreferred": false,
+  "lang": "indiferente",
+  "structure": "replay",
+  "flavors": ["fps", "battle_royale"],
+  "limit": 50
+}
+
+### Descoberta de jogos - Exploração e aventura
+POST {{host}}/api/discover
+Content-Type: application/json
+
+{
+  "vibe": ["explorar", "historia"],
+  "duration": "longo",
+  "energy": "normal",
+  "social": "solo",
+  "contentTone": "topa_pesado",
+  "controllerPreferred": true,
+  "lang": "ptbr_pref",
+  "structure": "campaign",
+  "flavors": ["open_world", "fantasia"],
+  "limit": 30
+}
