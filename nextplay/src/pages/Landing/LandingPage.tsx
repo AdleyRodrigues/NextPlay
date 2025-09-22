@@ -3,6 +3,7 @@ import {
     Box,
     Typography,
     Button,
+    TextField,
     Container,
     Snackbar,
     Alert,
@@ -225,15 +226,15 @@ export const LandingPage = () => {
                             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
                         }}
                     >
-                        <CardContent sx={{ p: 4 }}>
-                            <Stack spacing={3}>
+                        <CardContent sx={{ p: 3 }}>
+                            <Stack spacing={2}>
                                 <Box sx={{ textAlign: 'center' }}>
                                     <Typography
                                         variant="h4"
                                         sx={{
                                             color: '#ffffff',
                                             fontWeight: 700,
-                                            mb: 1,
+                                            mb: 0.5,
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
@@ -251,41 +252,44 @@ export const LandingPage = () => {
                                     </Typography>
                                 </Box>
 
-                                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                                    <Box sx={{ flex: 1 }}>
-                                        <input
-                                            type="text"
-                                            value={steamId}
-                                            onChange={(e) => setSteamId(e.target.value)}
-                                            placeholder="Cole seu Steam ID aqui (qualquer formato)"
-                                            style={{
-                                                width: '100%',
-                                                padding: '16px 20px',
-                                                fontSize: '16px',
-                                                borderRadius: '12px',
+                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'stretch', flexDirection: { xs: 'column', sm: 'row' } }}>
+                                    <TextField
+                                        fullWidth
+                                        value={steamId}
+                                        onChange={(e) => setSteamId(e.target.value)}
+                                        placeholder="Cole seu Steam ID aqui (qualquer formato)"
+                                        variant="outlined"
+                                        sx={{
+                                            flex: 1,
+                                            '& .MuiOutlinedInput-root': {
+                                                height: '56px',
+                                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
                                                 border: '2px solid rgba(255, 255, 255, 0.1)',
-                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                borderRadius: '12px',
+                                                '& fieldset': {
+                                                    borderColor: 'transparent',
+                                                },
+                                                '&:hover fieldset': {
+                                                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                                                },
+                                                '&.Mui-focused fieldset': {
+                                                    borderColor: '#667eea',
+                                                },
+                                            },
+                                            '& .MuiInputBase-input': {
                                                 color: '#ffffff',
-                                                outline: 'none',
-                                                transition: 'all 0.3s ease',
-                                            }}
-                                            onFocus={(e) => {
-                                                e.target.style.borderColor = '#667eea';
-                                                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-                                            }}
-                                            onBlur={(e) => {
-                                                e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                                                e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-                                            }}
-                                        />
-                                    </Box>
+                                                fontSize: '16px',
+                                                padding: '16px 20px',
+                                            },
+                                        }}
+                                    />
                                     <Button
                                         variant="contained"
                                         onClick={handleConnectSteam}
                                         disabled={isLoading || !steamId.trim()}
                                         sx={{
+                                            height: '56px',
                                             px: 4,
-                                            py: 2,
                                             borderRadius: '12px',
                                             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                             color: '#ffffff',
@@ -293,6 +297,7 @@ export const LandingPage = () => {
                                             fontSize: '1.1rem',
                                             textTransform: 'none',
                                             boxShadow: '0 8px 20px rgba(102, 126, 234, 0.4)',
+                                            minWidth: { xs: '100%', sm: '180px' },
                                             '&:hover': {
                                                 background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
                                                 transform: 'translateY(-2px)',
@@ -300,9 +305,10 @@ export const LandingPage = () => {
                                             },
                                             '&:disabled': {
                                                 background: 'rgba(255, 255, 255, 0.1)',
-                                                color: 'rgba(255, 255, 255, 0.5)',
+                                                color: 'rgba(255, 255, 255, 0.3)',
+                                                transform: 'none',
+                                                boxShadow: 'none',
                                             },
-                                            transition: 'all 0.3s ease',
                                         }}
                                     >
                                         {isLoading ? 'Conectando...' : 'Conectar Steam'}

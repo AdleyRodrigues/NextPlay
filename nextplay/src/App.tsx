@@ -11,9 +11,9 @@ export const App = () => {
       {isAuthenticated && <Header />}
       <Box
         sx={{
-          pt: isAuthenticated ? 8 : 0, // Espaço para o header simplificado
           minHeight: '100vh',
           background: 'linear-gradient(135deg, #1b2838 0%, #2a475e 100%)',
+          marginTop: isAuthenticated ? '64px' : '0px', // Altura do header
         }}
       >
         <AppRoutes />

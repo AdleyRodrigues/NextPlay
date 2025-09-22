@@ -515,7 +515,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                                     ) : (
                                         <Box sx={{ textAlign: 'center', py: 3 }}>
                                             <Typography variant="body2" sx={{ color: '#a0aec0' }}>
-                                                Nenhuma avaliação curta em português encontrada para este jogo
+                                                Nenhuma avaliação em português encontrada para este jogo
                                             </Typography>
                                             <Typography variant="caption" sx={{ color: '#718096', mt: 1, display: 'block' }}>
                                                 Tente novamente mais tarde ou verifique se o jogo tem reviews curtas em português
