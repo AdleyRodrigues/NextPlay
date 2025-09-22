@@ -73,7 +73,7 @@ export const SteamPlayerInfoSchema = z.object({
     createdDate: z.string().optional(),
 });
 
-export type SteamPlayerInfo = z.infer<typeof SteamPlayerInfoSchema>;
+// SteamPlayerInfo type is imported from context
 
 // API Response schemas
 export const RefreshResponseSchema = z.object({

@@ -1,38 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
-
-interface SteamPlayerInfo {
-    personaName: string;
-    realName?: string;
-    avatar: string;
-    avatarFull: string;
-    profileUrl: string;
-    isOnline: boolean;
-    isAway: boolean;
-    isBusy: boolean;
-    lastLogoff?: string;
-    countryCode?: string;
-    stateCode?: string;
-    createdDate?: string;
-    steamId64?: string;
-}
-
-interface SteamContextType {
-    steamId64: string | null;
-    setSteamId64: (id: string | null) => void;
-    isAuthenticated: boolean;
-    playerInfo: SteamPlayerInfo | null;
-    setPlayerInfo: (info: SteamPlayerInfo | null) => void;
-}
-
-const SteamContext = createContext<SteamContextType | undefined>(undefined);
-
-export const useSteam = () => {
-    const context = useContext(SteamContext);
-    if (!context) {
-        throw new Error('useSteam must be used within a SteamProvider');
-    }
-    return context;
-};
+import { useState, type ReactNode } from 'react';
+import { SteamContext, type SteamPlayerInfo } from './SteamContext.types';
 
 interface SteamProviderProps {
     children: ReactNode;

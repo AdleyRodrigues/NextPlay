@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import { Header } from './components/Header/Header';
 import { AppRoutes } from './routes/AppRoutes';
-import { useSteam } from './context/SteamContext';
+import { useSteam } from './hooks/useSteam';
 
 export const App = () => {
   const { isAuthenticated } = useSteam();

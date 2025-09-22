@@ -36,7 +36,7 @@ import {
 import { LandingFilter } from '../../components/LandingFilter/LandingFilter';
 import { RecommendationsList } from '../../components/RecommendationsList/RecommendationsList';
 import { useLandingState } from '../../hooks/useLandingState';
-import { useSteam } from '../../context/SteamContext';
+import { useSteam } from '../../hooks/useSteam';
 import { apiClient } from '../../api/client';
 import type { Game } from '../../api/schemas';
 

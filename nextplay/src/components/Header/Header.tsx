@@ -17,7 +17,7 @@ import {
     Info,
     Gamepad,
 } from '@mui/icons-material';
-import { useSteam } from '../../context/SteamContext';
+import { useSteam } from '../../hooks/useSteam';
 
 export const Header: React.FC = () => {
     const { steamId64, playerInfo, setSteamId64, setPlayerInfo } = useSteam();

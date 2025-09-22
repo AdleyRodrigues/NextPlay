@@ -28,7 +28,7 @@ import {
     Brightness7,
     FilterList,
 } from '@mui/icons-material';
-import { useSteam } from '../../context/SteamContext';
+import { useSteam } from '../../hooks/useSteam';
 // import { useTheme } from '../../theme/index';
 import { useToast } from '../../hooks/useToast';
 

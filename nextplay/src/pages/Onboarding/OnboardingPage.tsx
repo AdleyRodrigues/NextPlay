@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, TextField, Button, Typography, Paper, Alert, Avatar } from '@mui/material';
 import { SportsEsports, PlayArrow } from '@mui/icons-material';
-import { useSteam } from '../../context/SteamContext';
+import { useSteam } from '../../hooks/useSteam';
 
 export const OnboardingPage = () => {
     const navigate = useNavigate();
