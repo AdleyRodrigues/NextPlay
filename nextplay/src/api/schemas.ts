@@ -10,7 +10,7 @@ export const GameSchema = z.object({
     coverImage: z.string().url(),
     rating: z.number().min(0).max(100),
     hoursPlayed: z.number().min(0),
-    lastPlayed: z.string().optional(),
+    lastPlayed: z.string().optional().nullable(),
     price: z.number().optional(),
     originalPrice: z.number().optional(),
     discount: z.number().min(0).max(100).optional(),
@@ -20,10 +20,15 @@ export const GameSchema = z.object({
     steamScore: z.number().min(0).max(100).optional().nullable(),
     hltbMain: z.number().min(0).optional().nullable(),
     reasons: z.array(z.string()).optional(),
+    // Campos para conquistas
+    achievementsTotal: z.number().min(0).optional().nullable(),
+    achievementsUnlocked: z.number().min(0).optional().nullable(),
     // Campos para descoberta
     store: z.string().optional(), // "IGDB" | "RAWG" | "Steam"
     storeUrl: z.string().optional(),
     criticRating: z.number().optional().nullable(),
+    // Campos adicionais
+    genres: z.array(z.string()).optional(),
 });
 
 export type Game = z.infer<typeof GameSchema>;
@@ -52,10 +57,32 @@ export const FeedbackSchema = z.object({
 
 export type Feedback = z.infer<typeof FeedbackSchema>;
 
+// Steam Player Info schema
+export const SteamPlayerInfoSchema = z.object({
+    personaName: z.string(),
+    realName: z.string().optional(),
+    avatar: z.string(),
+    avatarFull: z.string(),
+    profileUrl: z.string(),
+    isOnline: z.boolean(),
+    isAway: z.boolean(),
+    isBusy: z.boolean(),
+    lastLogoff: z.string().optional(),
+    countryCode: z.string().optional(),
+    stateCode: z.string().optional(),
+    createdDate: z.string().optional(),
+});
+
+export type SteamPlayerInfo = z.infer<typeof SteamPlayerInfoSchema>;
+
 // API Response schemas
 export const RefreshResponseSchema = z.object({
     steamId: z.string(),
     games: z.array(GameSchema),
+    message: z.string().optional(),
+    gamesFound: z.number().optional(),
+    lastRefresh: z.string().optional(),
+    playerInfo: SteamPlayerInfoSchema.optional().nullable(),
 });
 
 export const SavePreferencesSchema = z.object({

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Grid,
@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { Refresh, TrendingUp, SentimentDissatisfied } from '@mui/icons-material';
 import { GameCard } from '../GameCard/GameCard';
+import { GameDetailsModal } from '../GameDetailsModal/GameDetailsModal';
 import type { Game } from '../../api/schemas';
 
 interface RecommendationsListProps {
@@ -18,10 +19,7 @@ interface RecommendationsListProps {
     isError: boolean;
     error?: Error | null;
     onRefresh: () => void;
-    onLike: (gameId: string) => void;
-    onDislike: (gameId: string) => void;
     onPlay: (gameId: string) => void;
-    onSnooze: (gameId: string) => void;
 }
 
 const LoadingSkeleton = () => (
@@ -196,119 +194,140 @@ export const RecommendationsList: React.FC<RecommendationsListProps> = ({
     isError,
     error,
     onRefresh,
-    onLike,
-    onDislike,
     onPlay,
-    onSnooze,
 }) => {
-    // Loading state
-    if (isLoading) {
+    const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+    const handleViewDetails = (game: Game) => {
+        setSelectedGame(game);
+        setIsDetailsModalOpen(true);
+    };
+
+    const handleCloseDetails = () => {
+        setIsDetailsModalOpen(false);
+        setSelectedGame(null);
+    };
+
+    const renderContent = () => {
+        // Loading state
+        if (isLoading) {
+            return (
+                <Box sx={{ py: 4 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 4 }}>
+                        <CircularProgress sx={{ color: '#66c0f4', mr: 2 }} />
+                        <Typography variant="h6" sx={{ color: '#c7d5e0' }}>
+                            Buscando suas recomendações...
+                        </Typography>
+                    </Box>
+                    <LoadingSkeleton />
+                </Box>
+            );
+        }
+
+        // Error state
+        if (isError) {
+            return <ErrorState error={error} onRefresh={onRefresh} />;
+        }
+
+        // Empty state
+        if (!games || games.length === 0) {
+            return <EmptyState onRefresh={onRefresh} />;
+        }
+
+        // Success state with games
         return (
             <Box sx={{ py: 4 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 4 }}>
-                    <CircularProgress sx={{ color: '#66c0f4', mr: 2 }} />
-                    <Typography variant="h6" sx={{ color: '#c7d5e0' }}>
-                        Buscando suas recomendações...
-                    </Typography>
-                </Box>
-                <LoadingSkeleton />
-            </Box>
-        );
-    }
-
-    // Error state
-    if (isError) {
-        return <ErrorState error={error} onRefresh={onRefresh} />;
-    }
-
-    // Empty state
-    if (!games || games.length === 0) {
-        return <EmptyState onRefresh={onRefresh} />;
-    }
-
-    // Success state with games
-    return (
-        <Box sx={{ py: 4 }}>
-            {/* Header */}
-            <Paper
-                sx={{
-                    p: 3,
-                    mb: 4,
-                    background: 'linear-gradient(135deg, #2a475e 0%, #1b2838 100%)',
-                    border: '1px solid #66c0f4',
-                }}
-            >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <TrendingUp sx={{ color: '#66c0f4', fontSize: 32 }} />
-                        <Box>
-                            <Typography
-                                variant="h4"
-                                sx={{
-                                    color: '#ffffff',
-                                    fontWeight: 700,
-                                    mb: 0.5,
-                                }}
-                            >
-                                🏆 TOP Recomendações
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: '#66c0f4',
-                                    fontWeight: 600,
-                                    fontSize: '0.85rem',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px',
-                                }}
-                            >
-                                Ranking personalizado
-                            </Typography>
-                        </Box>
-                    </Box>
-                    <Button
-                        variant="outlined"
-                        startIcon={<Refresh />}
-                        onClick={onRefresh}
-                        sx={{
-                            borderColor: '#66c0f4',
-                            color: '#66c0f4',
-                            '&:hover': {
-                                backgroundColor: 'rgba(102, 192, 244, 0.1)',
-                                borderColor: '#8ed8ff',
-                            },
-                        }}
-                    >
-                        ATUALIZAR
-                    </Button>
-                </Box>
-                <Typography
-                    variant="body1"
+                {/* Header */}
+                <Paper
                     sx={{
-                        color: '#c7d5e0',
-                        lineHeight: 1.6,
+                        p: 3,
+                        mb: 4,
+                        background: 'linear-gradient(135deg, #2a475e 0%, #1b2838 100%)',
+                        border: '1px solid #66c0f4',
                     }}
                 >
-                    Encontramos {games.length} {games.length === 1 ? 'jogo' : 'jogos'} perfeitos para você baseados nas suas preferências
-                </Typography>
-            </Paper>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <TrendingUp sx={{ color: '#66c0f4', fontSize: 32 }} />
+                            <Box>
+                                <Typography
+                                    variant="h4"
+                                    sx={{
+                                        color: '#ffffff',
+                                        fontWeight: 700,
+                                        mb: 0.5,
+                                    }}
+                                >
+                                    🏆 TOP Recomendações
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: '#66c0f4',
+                                        fontWeight: 600,
+                                        fontSize: '0.85rem',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px',
+                                    }}
+                                >
+                                    Ranking personalizado
+                                </Typography>
+                            </Box>
+                        </Box>
+                        <Button
+                            variant="outlined"
+                            startIcon={<Refresh />}
+                            onClick={onRefresh}
+                            sx={{
+                                borderColor: '#66c0f4',
+                                color: '#66c0f4',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(102, 192, 244, 0.1)',
+                                    borderColor: '#8ed8ff',
+                                },
+                            }}
+                        >
+                            ATUALIZAR
+                        </Button>
+                    </Box>
+                    <Typography
+                        variant="body1"
+                        sx={{
+                            color: '#c7d5e0',
+                            lineHeight: 1.6,
+                        }}
+                    >
+                        Encontramos {games.length} {games.length === 1 ? 'jogo' : 'jogos'} perfeitos para você baseados nas suas preferências
+                    </Typography>
+                </Paper>
 
-            {/* Games Grid */}
-            <Grid container spacing={3}>
-                {games.map((game, index) => (
-                    <Grid key={game.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                        <GameCard
-                            game={game}
-                            onLike={onLike}
-                            onDislike={onDislike}
-                            onPlay={onPlay}
-                            onSnooze={onSnooze}
-                            showPlayTime={false}
-                            rank={index + 1}
-                        />
-                    </Grid>
-                ))}
-            </Grid>
-        </Box>
+                {/* Games Grid */}
+                <Grid container spacing={3}>
+                    {games.map((game, index) => (
+                        <Grid key={game.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                            <GameCard
+                                game={game}
+                                onPlay={onPlay}
+                                onViewDetails={handleViewDetails}
+                                showPlayTime={false}
+                                rank={index + 1}
+                            />
+                        </Grid>
+                    ))}
+                </Grid>
+            </Box>
+        );
+    };
+
+    return (
+        <>
+            {renderContent()}
+            <GameDetailsModal
+                open={isDetailsModalOpen}
+                onClose={handleCloseDetails}
+                game={selectedGame}
+            />
+        </>
     );
 };

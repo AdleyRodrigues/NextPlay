@@ -21,7 +21,7 @@ public class QualityFloorDto
 {
     public int? Metacritic { get; set; }
     public int? OpenCritic { get; set; }
-    public int? SteamPosPct { get; set; }
+    public int? SteamPositivePct { get; set; }
 }
 
 

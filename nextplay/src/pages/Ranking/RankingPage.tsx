@@ -28,7 +28,7 @@ import { useRanking, getModeDescription, getModeIcon } from '../../api/ranking';
 type RankingMode = 'jogar' | 'terminar' | 'zerar' | 'platinar';
 
 export const RankingPage: React.FC = () => {
-    const [steamId64, setSteamId64] = useState('76561198000000000'); // Mock Steam ID
+    const [steamId64, setSteamId64] = useState('');
     const [mode, setMode] = useState<RankingMode>('jogar');
     const [limit, setLimit] = useState(5);
 
@@ -79,9 +79,6 @@ export const RankingPage: React.FC = () => {
                                     onChange={(e) => setSteamId64(e.target.value)}
                                     label="Steam ID64"
                                 >
-                                    <MenuItem value="76561198000000000">
-                                        Usuário Demo (Mock)
-                                    </MenuItem>
                                     <MenuItem value="76561198000000001">
                                         Usuário Teste 1
                                     </MenuItem>

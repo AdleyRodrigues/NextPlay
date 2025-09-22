@@ -8,16 +8,21 @@ import {
     IconButton,
     Menu,
     MenuItem,
+    Avatar,
+    Chip,
 } from '@mui/material';
 import {
     AccountCircle,
     Home,
+    ExitToApp,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSteam } from '../../context/SteamContext';
 
 export const Header: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { playerInfo, setSteamId64, setPlayerInfo } = useSteam();
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
     const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -25,6 +30,12 @@ export const Header: React.FC = () => {
     };
 
     const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleLogout = () => {
+        setSteamId64(null);
+        setPlayerInfo(null);
         setAnchorEl(null);
     };
 
@@ -82,16 +93,58 @@ export const Header: React.FC = () => {
 
                 {/* User Menu */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton
-                        size="large"
-                        aria-label="account of current user"
-                        aria-controls="menu-appbar"
-                        aria-haspopup="true"
-                        onClick={handleMenu}
-                        color="inherit"
-                    >
-                        <AccountCircle />
-                    </IconButton>
+                    {playerInfo ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Avatar
+                                src={playerInfo.avatar}
+                                alt={playerInfo.personaName}
+                                sx={{
+                                    width: 32,
+                                    height: 32,
+                                    border: '2px solid #66c0f4',
+                                    cursor: 'pointer'
+                                }}
+                                onClick={handleMenu}
+                            />
+                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                <Typography variant="body2" sx={{
+                                    color: '#ffffff',
+                                    fontWeight: 600,
+                                    lineHeight: 1
+                                }}>
+                                    {playerInfo.personaName}
+                                </Typography>
+                                <Chip
+                                    label={playerInfo.isOnline ? 'Online' :
+                                        playerInfo.isAway ? 'Ausente' :
+                                            playerInfo.isBusy ? 'Ocupado' : 'Offline'}
+                                    size="small"
+                                    sx={{
+                                        height: 16,
+                                        fontSize: '0.7rem',
+                                        backgroundColor: playerInfo.isOnline ? '#4caf50' :
+                                            playerInfo.isAway ? '#ff9800' :
+                                                playerInfo.isBusy ? '#f44336' : '#9e9e9e',
+                                        color: '#ffffff',
+                                        '& .MuiChip-label': {
+                                            px: 1
+                                        }
+                                    }}
+                                />
+                            </Box>
+                        </Box>
+                    ) : (
+                        <IconButton
+                            size="large"
+                            aria-label="account of current user"
+                            aria-controls="menu-appbar"
+                            aria-haspopup="true"
+                            onClick={handleMenu}
+                            color="inherit"
+                        >
+                            <AccountCircle />
+                        </IconButton>
+                    )}
 
                     <Menu
                         id="menu-appbar"
@@ -114,10 +167,28 @@ export const Header: React.FC = () => {
                             },
                         }}
                     >
-                        <MenuItem onClick={handleClose}>
-                            <AccountCircle sx={{ mr: 1 }} />
-                            Sobre NextPlay
-                        </MenuItem>
+                        {playerInfo ? [
+                            <MenuItem key="profile" onClick={handleClose}>
+                                <AccountCircle sx={{ mr: 1 }} />
+                                {playerInfo.personaName}
+                            </MenuItem>,
+                            <MenuItem key="steam-profile" onClick={() => {
+                                window.open(playerInfo.profileUrl, '_blank');
+                                handleClose();
+                            }}>
+                                <AccountCircle sx={{ mr: 1 }} />
+                                Ver Perfil Steam
+                            </MenuItem>,
+                            <MenuItem key="logout" onClick={handleLogout}>
+                                <ExitToApp sx={{ mr: 1 }} />
+                                Desconectar
+                            </MenuItem>
+                        ] : (
+                            <MenuItem onClick={handleClose}>
+                                <AccountCircle sx={{ mr: 1 }} />
+                                Sobre NextPlay
+                            </MenuItem>
+                        )}
                     </Menu>
                 </Box>
             </Toolbar>

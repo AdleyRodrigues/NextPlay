@@ -6,8 +6,8 @@ export const useRefresh = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (_steamId64: string) => {
-            return await apiClient.refresh();
+        mutationFn: async (steamId64: string) => {
+            return await apiClient.refresh(steamId64);
         },
         onSuccess: () => {
             // Invalidar queries relacionadas após refresh

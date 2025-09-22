@@ -20,7 +20,7 @@ public record DiscoverItem(
     string image,
     int? metacritic,
     double? criticRating,          // IGDB rating/RAWG rating
-    int? steamPosPct,              // se cruzado depois
+    int? steamPositivePct,         // se cruzado depois
     double? hltbMainHours,         // usar IGDB time_to_beat como proxy
     double scoreTotal,
     string[] why,

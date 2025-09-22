@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NextPlay.Api.Infrastructure.Ef;
 
@@ -10,9 +11,11 @@ using NextPlay.Api.Infrastructure.Ef;
 namespace NextPlay.Api.Migrations
 {
     [DbContext(typeof(NextPlayDbContext))]
-    partial class NextPlayDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250922013637_AddAchievementsToGame")]
+    partial class AddAchievementsToGame
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");

@@ -20,6 +20,11 @@ public interface IRawgService
     Task<RawgMeta?> GetGameMetaAsync(string name, System.Threading.CancellationToken ct = default);
 
     /// <summary>
+    /// Busca detalhes do jogo por appId Steam.
+    /// </summary>
+    Task<RawgMeta?> GetGameDetailsAsync(string appId, CancellationToken ct = default);
+
+    /// <summary>
     /// Descobre jogos baseado nos filtros fornecidos.
     /// </summary>
     Task<IReadOnlyList<DiscoverItem>> DiscoverAsync(DiscoverRequest req, CancellationToken ct = default);

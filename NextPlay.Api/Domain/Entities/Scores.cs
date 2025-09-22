@@ -13,6 +13,10 @@ public class Scores
 
     public int? SteamPositivePct { get; set; } // Percentage of positive Steam reviews
 
+    public int? SteamPositive { get; set; } // Count of positive Steam reviews
+
+    public int? SteamNegative { get; set; } // Count of negative Steam reviews
+
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties

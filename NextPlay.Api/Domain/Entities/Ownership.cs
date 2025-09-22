@@ -13,9 +13,15 @@ public class Ownership
 
     public int PlaytimeMin { get; set; }
 
+    public int PlaytimeForever { get; set; }
+
+    public int Playtime2Weeks { get; set; }
+
     public DateTime? LastPlayed { get; set; }
 
     public float? AchievementPct { get; set; }
+
+    public bool HasCommunityVisibleStats { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -1,12 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using NextPlay.Api.Application.Catalog;
 using NextPlay.Api.Infrastructure.Ef;
 using NextPlay.Api.Infrastructure.Providers;
 using NextPlay.Api.Application.Services;
 using NextPlay.Api.Infrastructure.Data;
 using NextPlay.Api.Endpoints;
 using Serilog;
-using Polly;
-using Polly.Extensions.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,20 +33,12 @@ builder.Services.Configure<RawgOptions>(builder.Configuration.GetSection("Rawg")
 builder.Services.AddHttpClient<IIgdbService, IgdbService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(15);
-})
-.AddPolicyHandler(HttpPolicyExtensions
-    .HandleTransientHttpError()
-    .OrResult(msg => (int)msg.StatusCode == 429)
-    .WaitAndRetryAsync(3, retry => TimeSpan.FromSeconds(Math.Pow(2, retry))));
+});
 
 builder.Services.AddHttpClient<IRawgService, RawgService>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(12);
-})
-.AddPolicyHandler(HttpPolicyExtensions
-    .HandleTransientHttpError()
-    .OrResult(msg => (int)msg.StatusCode == 429)
-    .WaitAndRetryAsync(3, retry => TimeSpan.FromSeconds(Math.Pow(2, retry))));
+});
 
 builder.Services.AddHttpClient<RawgService>();
 builder.Services.AddHttpClient<SteamStoreService>();

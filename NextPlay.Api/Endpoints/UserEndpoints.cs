@@ -20,6 +20,16 @@ public static class UserEndpoints
         group.MapPut("/userprefs", SaveUserPreferences)
             .WithName("SaveUserPreferences")
             .WithSummary("Salvar preferências do usuário");
+
+        // GET /api/admin/users - Listar todos os usuários
+        group.MapGet("/admin/users", GetAllUsers)
+            .WithName("GetAllUsers")
+            .WithSummary("Listar todos os usuários (Admin)");
+
+        // GET /api/admin/users/{steamId64} - Detalhes de um usuário específico
+        group.MapGet("/admin/users/{steamId64}", GetUserDetails)
+            .WithName("GetUserDetails")
+            .WithSummary("Obter detalhes de um usuário específico (Admin)");
     }
 
     private static async Task<IResult> RefreshUserLibrary(
@@ -49,6 +59,34 @@ public static class UserEndpoints
         catch (Exception ex)
         {
             return Results.BadRequest(new { code = "SAVE_PREFS_ERROR", message = ex.Message });
+        }
+    }
+
+    private static async Task<IResult> GetAllUsers(UserService userService)
+    {
+        try
+        {
+            var result = await userService.GetAllUsersAsync();
+            return Results.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { code = "GET_USERS_ERROR", message = ex.Message });
+        }
+    }
+
+    private static async Task<IResult> GetUserDetails(
+        string steamId64,
+        UserService userService)
+    {
+        try
+        {
+            var result = await userService.GetUserDetailsAsync(steamId64);
+            return Results.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { code = "GET_USER_DETAILS_ERROR", message = ex.Message });
         }
     }
 }

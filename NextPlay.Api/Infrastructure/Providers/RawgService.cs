@@ -64,7 +64,7 @@ public sealed class RawgService : IRawgService
             .Select(e => new
             {
                 El = e,
-                Metacritic = e.TryGetProperty("metacritic", out var m) && m.ValueKind == JsonValueKind.Number ? m.GetInt32() : null,
+                Metacritic = e.TryGetProperty("metacritic", out var m) && m.ValueKind == JsonValueKind.Number ? m.GetInt32() : (int?)null,
                 Name = e.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString() : ""
             })
             .OrderByDescending(x => Similarity(x.Name ?? "", name))
@@ -106,11 +106,18 @@ public sealed class RawgService : IRawgService
         return meta;
     }
 
+    public async Task<RawgMeta?> GetGameDetailsAsync(string appId, CancellationToken ct = default)
+    {
+        // Por enquanto, retorna null pois não temos mapeamento direto de appId para RAWG
+        // TODO: Implementar busca por appId usando Steam API para obter nome do jogo
+        return null;
+    }
+
     public async Task<IReadOnlyList<DiscoverItem>> DiscoverAsync(DiscoverRequest req, CancellationToken ct = default)
     {
         var cacheKey = $"rawg:discover:{GetRequestHash(req)}";
         if (_cache.TryGetValue(cacheKey, out IReadOnlyList<DiscoverItem>? cached))
-            return cached;
+            return cached ?? new List<DiscoverItem>();
 
         var games = new List<DiscoverItem>();
         var currentYear = DateTime.UtcNow.Year;
@@ -212,7 +219,7 @@ public sealed class RawgService : IRawgService
             image: game.background_image ?? "",
             metacritic: game.metacritic,
             criticRating: game.rating,
-            steamPosPct: null,
+            steamPositivePct: null,
             hltbMainHours: null,
             scoreTotal: 0, // Será calculado no CompositeCatalogService
             why: why.ToArray(),

@@ -9,45 +9,36 @@ import {
     CardMedia,
     Tooltip,
     IconButton,
-    Divider,
 } from '@mui/material';
 import {
-    ThumbUp,
-    ThumbDown,
-    SnoozeRounded,
     AccessTime,
     Star,
     OpenInNew,
     Storage,
+    Visibility,
 } from '@mui/icons-material';
 import { formatHours } from '../../utils/format';
 import type { Game } from '../../api/schemas';
 
 interface GameCardProps {
     game: Game;
-    onLike: (gameId: string) => void;
-    onDislike: (gameId: string) => void;
     onPlay: (gameId: string) => void;
-    onSnooze?: (gameId: string) => void;
+    onViewDetails?: (game: Game) => void;
     showPlayTime?: boolean;
     rank?: number; // Posição no ranking
 }
 
 export const GameCard = ({
     game,
-    onLike,
-    onDislike,
     onPlay,
-    onSnooze,
+    onViewDetails,
     showPlayTime = false,
     rank
 }: GameCardProps) => {
     const [imageError, setImageError] = useState(false);
 
-    const handleLike = () => onLike(game.id);
-    const handleDislike = () => onDislike(game.id);
     const handlePlay = () => onPlay(game.id);
-    const handleSnooze = () => onSnooze?.(game.id);
+    const handleViewDetails = () => onViewDetails?.(game);
 
     const getImageSrc = () => {
         if (imageError) {
@@ -148,10 +139,13 @@ export const GameCard = ({
                     '& .game-image': {
                         transform: 'scale(1.08)',
                     },
+                    '& .steam-overlay': {
+                        opacity: 1,
+                    },
                 },
             }}
         >
-            {/* Game Image */}
+            {/* Game Image with Overlay */}
             <Box sx={{ position: 'relative', overflow: 'hidden' }}>
                 <CardMedia
                     component="img"
@@ -164,7 +158,11 @@ export const GameCard = ({
                         backgroundColor: '#1b2838',
                         transition: 'transform 0.3s ease-in-out',
                         cursor: 'pointer',
+                        maxWidth: '100%',
                         padding: '8px',
+                        '&:hover': {
+                            transform: 'scale(1.02)',
+                        },
                     }}
                     onClick={handlePlay}
                     onError={() => {
@@ -173,6 +171,48 @@ export const GameCard = ({
                         }
                     }}
                 />
+
+                {/* Hover Overlay with Steam Button */}
+                <Box
+                    className="steam-overlay"
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease-in-out',
+                    }}
+                >
+                    <Button
+                        variant="contained"
+                        onClick={handlePlay}
+                        sx={{
+                            backgroundColor: '#66c0f4',
+                            color: '#1b2838',
+                            fontWeight: 600,
+                            px: 3,
+                            py: 1.5,
+                            borderRadius: '25px',
+                            textTransform: 'none',
+                            fontSize: '0.9rem',
+                            boxShadow: '0 4px 12px rgba(102, 192, 244, 0.3)',
+                            '&:hover': {
+                                backgroundColor: '#8ed8ff',
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 6px 16px rgba(102, 192, 244, 0.4)',
+                            },
+                            transition: 'all 0.2s ease-in-out',
+                        }}
+                    >
+                        VER NO STEAM
+                    </Button>
+                </Box>
             </Box>
 
             <CardContent sx={{ flexGrow: 1, p: 2.5, display: 'flex', flexDirection: 'column' }}>
@@ -341,85 +381,37 @@ export const GameCard = ({
                     </Box>
                 )}
 
-                <Divider sx={{ my: 1, borderColor: '#66c0f4' }} />
 
-                {/* Action Buttons - Simplified */}
-                <Box sx={{ display: 'flex', gap: 1, mt: 'auto', alignItems: 'center' }}>
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<ThumbUp />}
-                        onClick={handleLike}
-                        sx={{
-                            flex: 1,
-                            borderColor: '#a1d44a',
-                            color: '#a1d44a',
-                            fontSize: '0.75rem',
-                            '&:hover': {
-                                backgroundColor: 'rgba(161, 212, 74, 0.1)',
-                                borderColor: '#a1d44a',
-                            },
-                        }}
-                    >
-                        GOSTEI
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<ThumbDown />}
-                        onClick={handleDislike}
-                        sx={{
-                            flex: 1,
-                            borderColor: '#ff6b6b',
-                            color: '#ff6b6b',
-                            fontSize: '0.75rem',
-                            '&:hover': {
-                                backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                                borderColor: '#ff6b6b',
-                            },
-                        }}
-                    >
-                        NÃO GOSTEI
-                    </Button>
-                    {onSnooze && (
-                        <Tooltip title="Lembrar mais tarde">
-                            <IconButton
-                                size="small"
-                                onClick={handleSnooze}
-                                sx={{
-                                    color: '#ffd700',
-                                    '&:hover': {
-                                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                                    },
-                                }}
-                            >
-                                <SnoozeRounded />
-                            </IconButton>
-                        </Tooltip>
+                {/* Action Buttons */}
+                <Box sx={{ mt: 2, display: 'flex', gap: 1.5 }}>
+                    {/* Details Button */}
+                    {onViewDetails && (
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Visibility />}
+                            onClick={handleViewDetails}
+                            sx={{
+                                flex: 1,
+                                borderColor: '#66c0f4',
+                                color: '#66c0f4',
+                                fontSize: '0.8rem',
+                                py: 1.2,
+                                borderRadius: '8px',
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                '&:hover': {
+                                    backgroundColor: 'rgba(102, 192, 244, 0.1)',
+                                    borderColor: '#8ed8ff',
+                                    color: '#8ed8ff',
+                                    transform: 'translateY(-1px)',
+                                },
+                                transition: 'all 0.2s ease-in-out',
+                            }}
+                        >
+                            Ver Detalhes
+                        </Button>
                     )}
-                </Box>
-
-                {/* External Links */}
-                <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                    {/* Steam/Play Button */}
-                    <Button
-                        variant="text"
-                        size="small"
-                        onClick={handlePlay}
-                        sx={{
-                            flex: game.storeUrl ? 1 : 'auto',
-                            width: game.storeUrl ? 'auto' : '100%',
-                            color: '#66c0f4',
-                            fontWeight: 600,
-                            fontSize: '0.8rem',
-                            '&:hover': {
-                                backgroundColor: 'rgba(102, 192, 244, 0.1)',
-                                color: '#8ed8ff',
-                            },
-                        }}
-                    >
-                        {game.store === 'Steam' || !game.store ? 'VER NO STEAM' : 'BUSCAR'}
-                    </Button>
 
                     {/* External Store Link */}
                     {game.storeUrl && game.store && game.store !== 'Steam' && (
@@ -434,10 +426,15 @@ export const GameCard = ({
                                     borderColor: game.store === 'IGDB' ? '#4caf50' : '#2196f3',
                                     color: game.store === 'IGDB' ? '#4caf50' : '#2196f3',
                                     fontSize: '0.75rem',
+                                    py: 1.2,
+                                    borderRadius: '8px',
+                                    textTransform: 'none',
                                     '&:hover': {
                                         backgroundColor: game.store === 'IGDB' ? 'rgba(76,175,80,0.1)' : 'rgba(33,150,243,0.1)',
                                         borderColor: game.store === 'IGDB' ? '#4caf50' : '#2196f3',
+                                        transform: 'translateY(-1px)',
                                     },
+                                    transition: 'all 0.2s ease-in-out',
                                 }}
                             >
                                 {game.store}

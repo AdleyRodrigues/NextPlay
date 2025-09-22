@@ -28,7 +28,7 @@ import { apiClient } from '../../api/client';
 import type { Game } from '../../api/schemas';
 
 export const LandingPage = () => {
-    const { steamId64, setSteamId64 } = useSteam();
+    const { steamId64, setSteamId64, playerInfo, setPlayerInfo } = useSteam();
     const { filters, updateFilter, toggleFlavor, isValid, buildPayload } = useLandingState();
 
     const [recommendations, setRecommendations] = useState<Game[]>([]);
@@ -42,6 +42,7 @@ export const LandingPage = () => {
         // Recuperar preferência do usuário da sessão
         return sessionStorage.getItem('showSteamInstructions') === 'true';
     });
+    const [showUserInfo, setShowUserInfo] = useState(false);
 
     // Sincronizar estado temporário com Steam ID
     useEffect(() => {
@@ -70,6 +71,33 @@ export const LandingPage = () => {
 
     const showSnackbar = (message: string, severity: 'success' | 'error' | 'info' | 'warning' = 'info') => {
         setSnackbar({ open: true, message, severity });
+    };
+
+    const isValidSteamId = (steamId: string): boolean => {
+        if (!steamId || steamId.trim().length === 0) return false;
+
+        const trimmed = steamId.trim();
+
+        // Steam ID64 (17 dígitos)
+        if (trimmed.length === 17 && /^\d+$/.test(trimmed)) return true;
+
+        // Steam ID (formato STEAM_X:Y:Z)
+        if (trimmed.toLowerCase().startsWith('steam_')) {
+            const parts = trimmed.split(':');
+            if (parts.length === 3) {
+                return /^\d+$/.test(parts[0].substring(6)) && // Remove "STEAM_"
+                    /^\d+$/.test(parts[1]) &&
+                    /^\d+$/.test(parts[2]);
+            }
+        }
+
+        // Steam ID3 (formato [U:1:XXXXXX])
+        if (trimmed.startsWith('[U:1:') && trimmed.endsWith(']')) {
+            const id3 = trimmed.substring(5, trimmed.length - 1);
+            return /^\d+$/.test(id3);
+        }
+
+        return false;
     };
 
     const handleCloseSnackbar = () => {
@@ -112,42 +140,6 @@ export const LandingPage = () => {
         handleSearch();
     };
 
-    const handleLike = async (gameId: string) => {
-        try {
-            // Optimistic update - não remove da lista para likes
-            showSnackbar('Obrigado pelo feedback! 👍', 'success');
-
-            // Simular chamada de API
-            await apiClient.feedback({
-                gameId,
-                rating: 5,
-                comment: 'Usuário curtiu a recomendação',
-            });
-        } catch (err) {
-            console.error('Erro ao enviar feedback:', err);
-            showSnackbar('Erro ao enviar feedback', 'error');
-        }
-    };
-
-    const handleDislike = async (gameId: string) => {
-        try {
-            // Optimistic update - remove da lista imediatamente
-            setRecommendations(prev => prev.filter(game => game.id !== gameId));
-            showSnackbar('Recomendação removida da lista', 'info');
-
-            // Simular chamada de API
-            await apiClient.feedback({
-                gameId,
-                rating: 1,
-                comment: 'Usuário não curtiu a recomendação',
-            });
-        } catch (err) {
-            console.error('Erro ao enviar feedback:', err);
-            // Reverter otimistic update em caso de erro
-            handleRefresh();
-            showSnackbar('Erro ao enviar feedback', 'error');
-        }
-    };
 
     const handlePlay = (gameId: string) => {
         const game = recommendations.find(g => g.id === gameId);
@@ -160,23 +152,6 @@ export const LandingPage = () => {
         }
     };
 
-    const handleSnooze = async (gameId: string) => {
-        try {
-            // Remove da lista atual (usuário verá novamente mais tarde)
-            setRecommendations(prev => prev.filter(game => game.id !== gameId));
-            showSnackbar('Jogo adicionado à lista para mais tarde 💤', 'info');
-
-            // Simular chamada de API para marcar como "snooze"
-            await apiClient.feedback({
-                gameId,
-                rating: 3,
-                comment: 'Usuário quer ver mais tarde',
-            });
-        } catch (err) {
-            console.error('Erro ao fazer snooze:', err);
-            showSnackbar('Erro ao processar solicitação', 'error');
-        }
-    };
 
     return (
         <Box
@@ -199,6 +174,170 @@ export const LandingPage = () => {
                         textAlign: 'center',
                     }}
                 >
+                    {/* Informações do Perfil Steam */}
+                    {playerInfo && (
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 2,
+                            mb: 2,
+                            p: 2,
+                            backgroundColor: 'rgba(102, 192, 244, 0.1)',
+                            borderRadius: 2,
+                            border: '1px solid rgba(102, 192, 244, 0.3)'
+                        }}>
+                            <Box sx={{
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <img
+                                    src={playerInfo.avatar}
+                                    alt={playerInfo.personaName}
+                                    style={{
+                                        width: 60,
+                                        height: 60,
+                                        borderRadius: '50%',
+                                        border: '2px solid #66c0f4'
+                                    }}
+                                />
+                                {/* Status indicator */}
+                                <Box sx={{
+                                    position: 'absolute',
+                                    bottom: 2,
+                                    right: 2,
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: '50%',
+                                    backgroundColor: playerInfo.isOnline ? '#4caf50' :
+                                        playerInfo.isAway ? '#ff9800' :
+                                            playerInfo.isBusy ? '#f44336' : '#9e9e9e',
+                                    border: '2px solid #1b2838'
+                                }} />
+                            </Box>
+                            <Box sx={{ textAlign: 'left', flex: 1 }}>
+                                <Typography variant="h6" sx={{
+                                    color: '#ffffff',
+                                    fontWeight: 700,
+                                    mb: 0.5
+                                }}>
+                                    {playerInfo.personaName}
+                                </Typography>
+                                {playerInfo.realName && (
+                                    <Typography variant="body2" sx={{
+                                        color: '#c7d5e0',
+                                        mb: 0.5
+                                    }}>
+                                        {playerInfo.realName}
+                                    </Typography>
+                                )}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Typography variant="caption" sx={{
+                                        color: playerInfo.isOnline ? '#4caf50' :
+                                            playerInfo.isAway ? '#ff9800' :
+                                                playerInfo.isBusy ? '#f44336' : '#9e9e9e',
+                                        fontWeight: 600
+                                    }}>
+                                        {playerInfo.isOnline ? '🟢 Online' :
+                                            playerInfo.isAway ? '🟡 Ausente' :
+                                                playerInfo.isBusy ? '🔴 Ocupado' : '⚫ Offline'}
+                                    </Typography>
+                                    {playerInfo.countryCode && (
+                                        <Typography variant="caption" sx={{
+                                            color: '#8fb9d3',
+                                            ml: 1
+                                        }}>
+                                            🌍 {playerInfo.countryCode}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Box>
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => setShowUserInfo(!showUserInfo)}
+                                sx={{
+                                    borderColor: '#66c0f4',
+                                    color: '#66c0f4',
+                                    minWidth: 'auto',
+                                    px: 2
+                                }}
+                            >
+                                {showUserInfo ? 'Ocultar' : 'Ver Info'}
+                            </Button>
+                        </Box>
+                    )}
+
+                    {/* Informações Detalhadas do Usuário */}
+                    {playerInfo && showUserInfo && (
+                        <Box sx={{
+                            mb: 2,
+                            p: 2,
+                            backgroundColor: 'rgba(42, 71, 94, 0.3)',
+                            borderRadius: 2,
+                            border: '1px solid rgba(102, 192, 244, 0.2)'
+                        }}>
+                            <Typography variant="h6" sx={{ color: '#66c0f4', mb: 2, textAlign: 'center' }}>
+                                📊 Informações Detalhadas
+                            </Typography>
+
+                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                    <Typography variant="body2" sx={{ color: '#c7d5e0' }}>
+                                        Steam ID64
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                                        {steamId64}
+                                    </Typography>
+                                </Box>
+
+                                {playerInfo.createdDate && (
+                                    <Box sx={{ textAlign: 'center' }}>
+                                        <Typography variant="body2" sx={{ color: '#c7d5e0' }}>
+                                            Membro desde
+                                        </Typography>
+                                        <Typography variant="body1" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                                            {new Date(playerInfo.createdDate).toLocaleDateString('pt-BR')}
+                                        </Typography>
+                                    </Box>
+                                )}
+
+                                {playerInfo.lastLogoff && (
+                                    <Box sx={{ textAlign: 'center' }}>
+                                        <Typography variant="body2" sx={{ color: '#c7d5e0' }}>
+                                            Último logoff
+                                        </Typography>
+                                        <Typography variant="body1" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                                            {new Date(playerInfo.lastLogoff).toLocaleDateString('pt-BR')}
+                                        </Typography>
+                                    </Box>
+                                )}
+
+                                {playerInfo.profileUrl && (
+                                    <Box sx={{ textAlign: 'center' }}>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            startIcon={<OpenInNew />}
+                                            onClick={() => window.open(playerInfo.profileUrl, '_blank')}
+                                            sx={{
+                                                borderColor: '#66c0f4',
+                                                color: '#66c0f4',
+                                                '&:hover': {
+                                                    borderColor: '#4a9eff',
+                                                    backgroundColor: 'rgba(102, 192, 244, 0.1)'
+                                                }
+                                            }}
+                                        >
+                                            Ver Perfil Steam
+                                        </Button>
+                                    </Box>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 1 }}>
                         <Box
                             sx={{
@@ -282,13 +421,10 @@ export const LandingPage = () => {
                             <PersonalVideo sx={{ fontSize: 32, color: '#66c0f4' }} />
                         </Box>
                         <Typography variant="h6" sx={{ color: '#ffffff', mb: 1, fontWeight: 700, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                            {steamId64 ? 'Editar Steam ID' : 'Conecte sua Conta Steam'}
+                            Conecte sua Conta Steam
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#c7d5e0', maxWidth: 500, mx: 'auto', lineHeight: 1.4, fontSize: '1rem' }}>
-                            {steamId64
-                                ? 'Edite seu Steam ID64 ou conecte uma nova conta para receber recomendações personalizadas.'
-                                : 'Para receber recomendações personalizadas baseadas na sua biblioteca, precisamos do seu Steam ID64. Você pode encontrá-lo facilmente!'
-                            }
+                            Para receber recomendações personalizadas baseadas na sua biblioteca, precisamos do seu Steam ID. Aceitamos qualquer formato!
                         </Typography>
                     </Box>
 
@@ -301,7 +437,7 @@ export const LandingPage = () => {
                     }}>
                         {/* Label */}
                         <Typography variant="body2" sx={{ color: '#66c0f4', fontWeight: 600, fontSize: '1rem', textAlign: { xs: 'center', sm: 'left' } }}>
-                            Steam ID64:
+                            Steam ID (qualquer formato):
                         </Typography>
 
                         {/* Input e Botão em linha */}
@@ -315,21 +451,11 @@ export const LandingPage = () => {
                             <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <input
                                     type="text"
-                                    placeholder="Ex: 76561198000000000"
+                                    placeholder="Ex: STEAM_0:1:225722976 ou 76561198411711681"
                                     value={tempSteamId}
                                     onChange={(e) => {
                                         const value = e.target.value.trim();
                                         setTempSteamId(value);
-
-                                        if (value && (value.length < 17 || !/^\d+$/.test(value))) {
-                                            if (!showInstructions) {
-                                                setTimeout(() => {
-                                                    if (tempSteamId !== value) {
-                                                        showSnackbar('💡 Dica: Use o card de instruções para encontrar seu SteamID64 correto', 'info');
-                                                    }
-                                                }, 1000);
-                                            }
-                                        }
                                     }}
                                     style={{
                                         width: '100%',
@@ -361,30 +487,61 @@ export const LandingPage = () => {
                                 variant="contained"
                                 size="large"
                                 startIcon={<PersonalVideo />}
-                                onClick={() => {
-                                    if (tempSteamId && tempSteamId.length >= 17) {
-                                        setSteamId64(tempSteamId);
-                                        showSnackbar('Steam ID conectado com sucesso! 🎮', 'success');
+                                onClick={async () => {
+                                    if (tempSteamId && isValidSteamId(tempSteamId)) {
+                                        try {
+                                            console.log('🚀 [Frontend] Starting Steam connection process...');
+                                            console.log('🔍 [Frontend] Steam ID to connect:', tempSteamId);
+                                            setIsLoading(true);
+
+                                            // Fazer refresh da biblioteca Steam
+                                            console.log('📡 [Frontend] Calling apiClient.refresh...');
+                                            const refreshResult = await apiClient.refresh(tempSteamId);
+                                            console.log('📊 [Frontend] Backend refresh response:', refreshResult);
+
+                                            // Salvar informações do perfil se disponíveis
+                                            if (refreshResult.playerInfo) {
+                                                console.log('✅ [Frontend] Player info received:', refreshResult.playerInfo);
+                                                setPlayerInfo(refreshResult.playerInfo);
+                                            } else {
+                                                console.log('⚠️ [Frontend] No player info in response - playerInfo is null');
+                                            }
+
+                                            // Definir Steam ID64 após sucesso
+                                            setSteamId64(tempSteamId);
+                                            console.log('💾 [Frontend] Steam ID64 saved to context:', tempSteamId);
+
+                                            if (refreshResult.gamesFound && refreshResult.gamesFound > 0) {
+                                                showSnackbar(`Steam conectado! ${refreshResult.gamesFound} jogos sincronizados! 🎮`, 'success');
+                                            } else {
+                                                showSnackbar('Steam conectado! Biblioteca sincronizada! 🎮', 'success');
+                                            }
+                                        } catch (error) {
+                                            console.error('💥 [Frontend] Error syncing Steam library:', error);
+                                            showSnackbar('Erro ao conectar Steam. Verifique se o Steam ID está correto.', 'error');
+                                        } finally {
+                                            setIsLoading(false);
+                                        }
                                     } else {
-                                        showSnackbar('Por favor, insira um Steam ID válido (17 dígitos)', 'warning');
+                                        showSnackbar('Por favor, insira um Steam ID válido (qualquer formato)', 'warning');
                                     }
                                 }}
-                                disabled={!tempSteamId || tempSteamId.length < 17}
+                                disabled={!tempSteamId || !isValidSteamId(tempSteamId) || isLoading}
                                 sx={{
                                     height: '48px',
                                     px: 3,
                                     py: 0,
                                     fontSize: '0.95rem',
                                     fontWeight: 600,
-                                    backgroundColor: tempSteamId && tempSteamId.length >= 17 ? '#66c0f4' : 'rgba(102, 192, 244, 0.3)',
-                                    color: tempSteamId && tempSteamId.length >= 17 ? '#1b2838' : 'rgba(27, 40, 56, 0.5)',
+                                    backgroundColor: tempSteamId && isValidSteamId(tempSteamId) ? '#66c0f4' : 'rgba(102, 192, 244, 0.3)',
+                                    color: tempSteamId && isValidSteamId(tempSteamId) ? '#1b2838' : 'rgba(27, 40, 56, 0.5)',
                                     borderRadius: '8px',
                                     border: '2px solid transparent',
                                     transition: 'all 0.2s ease',
                                     whiteSpace: 'nowrap',
                                     minWidth: { xs: '100%', sm: '180px' },
                                     '&:hover': {
-                                        backgroundColor: tempSteamId && tempSteamId.length >= 17 ? '#8ed8ff' : 'rgba(102, 192, 244, 0.3)',
+                                        backgroundColor: tempSteamId && isValidSteamId(tempSteamId) ? '#8ed8ff' : 'rgba(102, 192, 244, 0.3)',
                                         transform: 'translateY(-1px)',
                                         boxShadow: '0 4px 12px rgba(102, 192, 244, 0.25)',
                                     },
@@ -396,7 +553,7 @@ export const LandingPage = () => {
                                     },
                                 }}
                             >
-                                {steamId64 ? 'Atualizar Steam ID' : 'Conectar Steam'}
+                                {isLoading ? 'Sincronizando...' : 'Conectar Steam'}
                             </Button>
                         </Box>
                     </Box>
@@ -454,9 +611,26 @@ export const LandingPage = () => {
                                         <Typography variant="body2" sx={{ color: '#1976d2', mb: 1.5, lineHeight: 1.5, fontSize: '0.9rem' }}>
                                             1. Acesse seu perfil da Steam no navegador.<br />
                                             2. Copie a URL do perfil (ex.: https://steamcommunity.com/id/seunome/).<br />
-                                            3. Cole essa URL no site <strong>steamid.io</strong> para obter seu SteamID64.<br />
-                                            4. Copie o número SteamID64 e cole no campo acima.
+                                            3. Cole essa URL no site <strong>steamid.io</strong> para obter seu Steam ID.<br />
+                                            4. Copie qualquer um dos formatos e cole no campo acima:
                                         </Typography>
+
+                                        <Box sx={{
+                                            p: 1.5,
+                                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                            borderRadius: 1,
+                                            border: '1px solid rgba(33, 150, 243, 0.2)',
+                                            mb: 1.5
+                                        }}>
+                                            <Typography variant="caption" sx={{ color: '#1976d2', fontWeight: 500, fontSize: '0.8rem', display: 'block', mb: 0.5 }}>
+                                                <strong>Formatos aceitos:</strong>
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: '#1976d2', fontSize: '0.75rem', display: 'block' }}>
+                                                • Steam ID: <code>STEAM_0:1:225722976</code><br />
+                                                • Steam ID64: <code>76561198411711681</code><br />
+                                                • Steam ID3: <code>[U:1:451445953]</code>
+                                            </Typography>
+                                        </Box>
 
                                         <Box sx={{
                                             p: 1.5,
@@ -466,7 +640,7 @@ export const LandingPage = () => {
                                             mb: 1.5
                                         }}>
                                             <Typography variant="caption" sx={{ color: '#f57c00', fontWeight: 500, fontSize: '0.8rem' }}>
-                                                💡 <strong>Dica:</strong> Seu SteamID64 é sempre um número muito grande (17 dígitos).
+                                                💡 <strong>Dica:</strong> Aceitamos qualquer formato de Steam ID! Use o que for mais fácil para você.
                                             </Typography>
                                         </Box>
 
@@ -583,10 +757,7 @@ export const LandingPage = () => {
                         isError={isError}
                         error={error}
                         onRefresh={handleRefresh}
-                        onLike={handleLike}
-                        onDislike={handleDislike}
                         onPlay={handlePlay}
-                        onSnooze={handleSnooze}
                     />
                 )}
 

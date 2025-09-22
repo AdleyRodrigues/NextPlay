@@ -3,169 +3,67 @@ import { RefreshResponseSchema, SavePreferencesSchema, RecommendResponseSchema, 
 import type { RecommendationPayload } from '../hooks/useLandingState';
 
 export const apiClient = {
-    refresh: async () => {
-        // Simular delay de rede
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    refresh: async (steamId64: string) => {
+        console.log('🔄 Refreshing Steam library for:', steamId64);
 
-        const mockData = {
-            steamId: '76561198012345678',
-            games: [
-                {
-                    id: '1',
-                    name: 'The Witcher 3: Wild Hunt',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/292030/header.jpg',
-                    rating: 95,
-                    hoursPlayed: 120.5,
-                    lastPlayed: '2024-01-15T10:30:00Z',
-                },
-                {
-                    id: '2',
-                    name: 'Cyberpunk 2077',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg',
-                    rating: 78,
-                    hoursPlayed: 45.2,
-                    lastPlayed: '2024-01-10T15:45:00Z',
-                },
-                {
-                    id: '3',
-                    name: 'Red Dead Redemption 2',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg',
-                    rating: 92,
-                    hoursPlayed: 89.7,
-                    lastPlayed: '2024-01-05T20:15:00Z',
-                },
-                {
-                    id: '4',
-                    name: 'Elden Ring',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1245620/header.jpg',
-                    rating: 88,
-                    hoursPlayed: 156.3,
-                    lastPlayed: '2024-01-20T14:20:00Z',
-                },
-                {
-                    id: '5',
-                    name: 'Baldur\'s Gate 3',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1086940/header.jpg',
-                    rating: 96,
-                    hoursPlayed: 203.8,
-                    lastPlayed: '2024-01-18T09:30:00Z',
-                },
-                {
-                    id: '6',
-                    name: 'God of War',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1593500/header.jpg',
-                    rating: 94,
-                    hoursPlayed: 67.4,
-                    lastPlayed: '2024-01-12T16:45:00Z',
-                },
-            ],
-        };
+        try {
+            // Chama a API real do backend
+            const response = await http.get(`/api/refresh/${steamId64}`);
+            const backendData = response.data;
 
-        return RefreshResponseSchema.parse(mockData);
+            console.log('📚 Backend refresh response:', backendData);
+
+            // Transforma a resposta para o formato esperado pelo frontend
+            const frontendData = {
+                steamId: steamId64,
+                games: [], // A biblioteca será carregada separadamente se necessário
+                message: backendData.message,
+                gamesFound: backendData.gamesFound,
+                lastRefresh: backendData.lastRefresh,
+                playerInfo: backendData.playerInfo
+            };
+
+            return RefreshResponseSchema.parse(frontendData);
+        } catch (error) {
+            console.error('❌ Error refreshing Steam library:', error);
+            throw error;
+        }
     },
 
     savePreferences: async (preferences: Preferences) => {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        console.log('💾 Saving preferences:', preferences);
 
-        const mockResponse = {
-            preferences: {
-                genres: preferences.genres,
-                playtime: preferences.playtime,
-                rating: preferences.rating,
-            },
-        };
-
-        return SavePreferencesSchema.parse(mockResponse);
+        try {
+            const response = await http.put('/api/userprefs', preferences);
+            return SavePreferencesSchema.parse(response.data);
+        } catch (error) {
+            console.error('❌ Error saving preferences:', error);
+            throw error;
+        }
     },
 
-    recommend: async (_page: number = 1, _limit: number = 10) => {
-        await new Promise(resolve => setTimeout(resolve, 1200));
+    recommend: async (page: number = 1, limit: number = 10) => {
+        console.log('🎯 Getting recommendations:', { page, limit });
 
-        const mockRecommendations = {
-            games: [
-                {
-                    id: 'rec1',
-                    name: 'The Witcher 3: Wild Hunt',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/292030/header.jpg',
-                    rating: 95,
-                    hoursPlayed: 120.5,
-                    lastPlayed: '2024-01-15T10:30:00Z',
-                    price: 29.99,
-                    originalPrice: 59.99,
-                    discount: 50,
-                },
-                {
-                    id: 'rec2',
-                    name: 'Cyberpunk 2077',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg',
-                    rating: 78,
-                    hoursPlayed: 45.2,
-                    lastPlayed: '2024-01-10T15:45:00Z',
-                    price: 39.99,
-                    originalPrice: 79.99,
-                    discount: 50,
-                },
-                {
-                    id: 'rec3',
-                    name: 'Red Dead Redemption 2',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg',
-                    rating: 92,
-                    hoursPlayed: 89.7,
-                    lastPlayed: '2024-01-05T20:15:00Z',
-                    price: 44.99,
-                    originalPrice: 89.99,
-                    discount: 50,
-                },
-                {
-                    id: 'rec4',
-                    name: 'Elden Ring',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1245620/header.jpg',
-                    rating: 88,
-                    hoursPlayed: 156.3,
-                    lastPlayed: '2024-01-20T14:20:00Z',
-                    price: 49.99,
-                    originalPrice: 99.99,
-                    discount: 50,
-                },
-                {
-                    id: 'rec5',
-                    name: 'Baldur\'s Gate 3',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1086940/header.jpg',
-                    rating: 96,
-                    hoursPlayed: 203.8,
-                    lastPlayed: '2024-01-18T09:30:00Z',
-                    price: 59.99,
-                    originalPrice: 119.99,
-                    discount: 50,
-                },
-                {
-                    id: 'rec6',
-                    name: 'God of War',
-                    coverImage: 'https://cdn.akamai.steamstatic.com/steam/apps/1593500/header.jpg',
-                    rating: 94,
-                    hoursPlayed: 67.4,
-                    lastPlayed: '2024-01-12T16:45:00Z',
-                    price: 34.99,
-                    originalPrice: 69.99,
-                    discount: 50,
-                },
-            ],
-            total: 25,
-        };
-
-        return RecommendResponseSchema.parse(mockRecommendations);
+        try {
+            const response = await http.get(`/api/recommendations?page=${page}&limit=${limit}`);
+            return RecommendResponseSchema.parse(response.data);
+        } catch (error) {
+            console.error('❌ Error getting recommendations:', error);
+            throw error;
+        }
     },
 
     feedback: async (feedback: Feedback) => {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('💬 Sending feedback:', feedback);
 
-        const mockResponse = {
-            gameId: feedback.gameId,
-            rating: feedback.rating,
-            comment: feedback.comment,
-        };
-
-        return FeedbackSchema.parse(mockResponse);
+        try {
+            const response = await http.post('/api/feedback', feedback);
+            return FeedbackSchema.parse(response.data);
+        } catch (error) {
+            console.error('❌ Error sending feedback:', error);
+            throw error;
+        }
     },
 
     recommendByVibe: async (payload: RecommendationPayload) => {
@@ -185,13 +83,18 @@ export const apiClient = {
                 name: item.name,
                 coverImage: `https://cdn.akamai.steamstatic.com/steam/apps/${item.appId}/header.jpg`,
                 rating: item.scoreTotal,
-                hoursPlayed: 0,
+                hoursPlayed: item.playtimeForever ? item.playtimeForever / 60 : 0, // Converter minutos para horas
+                lastPlayed: item.lastPlayed || null,
                 metaScore: item.scores?.metacritic || null,
                 openCriticScore: item.scores?.openCritic || null,
                 steamScore: item.scores?.steamPosPct || null,
                 hltbMain: item.hltb?.mainHours || null,
                 reasons: item.why,
-                // Não incluir campos opcionais se não temos dados
+                // Campos de conquistas (quando disponíveis)
+                achievementsTotal: item.achievementsTotal || null,
+                achievementsUnlocked: item.achievementsUnlocked || null,
+                // Gêneros (quando disponíveis)
+                genres: item.genres || [],
             })),
             total: backendData.items.length,
         };

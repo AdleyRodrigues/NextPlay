@@ -15,10 +15,17 @@ export interface LandingFilters {
     limit?: number;
 }
 
-export interface RecommendationPayload extends LandingFilters {
+export interface RecommendationPayload {
     steamId64: string;
     vibe: NonNullable<LandingFilters['vibe']>;
     duration: NonNullable<LandingFilters['duration']>;
+    energy: NonNullable<LandingFilters['energy']>;
+    social: NonNullable<LandingFilters['social']>;
+    contentTone: NonNullable<LandingFilters['contentTone']>;
+    controllerPreferred: NonNullable<LandingFilters['controllerPreferred']>;
+    lang: string; // Backend espera string, não array
+    structure: NonNullable<LandingFilters['structure']>;
+    flavors: NonNullable<LandingFilters['flavors']>;
     limit: number;
 }
 
@@ -31,7 +38,7 @@ export const useLandingState = () => {
         lang: ['dublado', 'legendado'],
         structure: 'campaign',
         flavors: [],
-        limit: 100,
+        limit: 20,
     });
 
     const updateFilter = <K extends keyof LandingFilters>(
@@ -69,15 +76,15 @@ export const useLandingState = () => {
         return {
             steamId64,
             vibe: filters.vibe || [],
-            duration: filters.duration,
-            energy: filters.energy,
-            social: filters.social,
-            contentTone: filters.contentTone,
-            controllerPreferred: filters.controllerPreferred,
-            lang: filters.lang,
-            structure: filters.structure,
-            flavors: filters.flavors,
-            limit: filters.limit || 100,
+            duration: filters.duration!,
+            energy: filters.energy!,
+            social: filters.social!,
+            contentTone: filters.contentTone!,
+            controllerPreferred: filters.controllerPreferred!,
+            lang: Array.isArray(filters.lang) ? filters.lang.join(',') : 'indiferente',
+            structure: filters.structure!,
+            flavors: filters.flavors || [],
+            limit: filters.limit || 20,
         };
     };
 
@@ -100,7 +107,7 @@ export const useLandingState = () => {
             lang: filters.lang || ['indiferente'],
             structure: filters.structure || 'tanto_faz',
             flavors: filters.flavors || [],
-            limit: filters.limit || 100,
+            limit: filters.limit || 20,
         };
     };
 
