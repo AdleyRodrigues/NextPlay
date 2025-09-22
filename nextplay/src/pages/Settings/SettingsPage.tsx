@@ -29,13 +29,15 @@ import {
     FilterList,
 } from '@mui/icons-material';
 import { useSteam } from '../../context/SteamContext';
-import { useTheme } from '../../theme/index';
+// import { useTheme } from '../../theme/index';
 import { useToast } from '../../hooks/useToast';
 
 export const SettingsPage = () => {
     const navigate = useNavigate();
     const { steamId64, setSteamId64 } = useSteam();
-    const { isDarkMode, toggleTheme } = useTheme();
+    // const { isDarkMode, toggleTheme } = useTheme();
+    const isDarkMode = true;
+    const toggleTheme = () => { };
     const { showToast } = useToast();
 
     // Estados para configurações

@@ -1,196 +1,300 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     AppBar,
     Toolbar,
     Typography,
-    Box,
-    Button,
     IconButton,
+    Avatar,
     Menu,
     MenuItem,
-    Avatar,
     Chip,
+    Box,
+    Fade,
 } from '@mui/material';
 import {
-    AccountCircle,
-    Home,
     ExitToApp,
+    Public,
+    Info,
+    Gamepad,
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useSteam } from '../../context/SteamContext';
 
 export const Header: React.FC = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { playerInfo, setSteamId64, setPlayerInfo } = useSteam();
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const { steamId64, playerInfo, setSteamId64, setPlayerInfo } = useSteam();
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
 
-    const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
     };
 
-    const handleClose = () => {
+    const handleMenuClose = () => {
         setAnchorEl(null);
+    };
+
+    const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+        setMobileMenuAnchor(event.currentTarget);
+    };
+
+    const handleMobileMenuClose = () => {
+        setMobileMenuAnchor(null);
     };
 
     const handleLogout = () => {
-        setSteamId64(null);
+        setSteamId64('');
         setPlayerInfo(null);
-        setAnchorEl(null);
+        localStorage.removeItem('steamId64');
+        localStorage.removeItem('playerInfo');
+        handleMenuClose();
+        handleMobileMenuClose();
     };
 
-
-
-    const isActive = (path: string) => {
-        return location.pathname === path;
+    const handleViewSteamProfile = () => {
+        if (playerInfo?.steamId64) {
+            window.open(`https://steamcommunity.com/profiles/${playerInfo.steamId64}`, '_blank');
+        }
+        handleMenuClose();
+        handleMobileMenuClose();
     };
+
+    const isMenuOpen = Boolean(anchorEl);
+    const isMobileMenuOpen = Boolean(mobileMenuAnchor);
 
     return (
         <AppBar
             position="fixed"
             sx={{
-                backgroundColor: '#1b2838',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                zIndex: 1200,
+                background: 'rgba(15, 20, 25, 0.95)',
+                backdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                zIndex: 1300,
             }}
         >
-            <Toolbar>
+            <Toolbar sx={{ px: { xs: 2, md: 4 } }}>
                 {/* Logo */}
-                <Typography
-                    variant="h6"
-                    component="div"
-                    sx={{
-                        flexGrow: 0,
-                        mr: 4,
-                        fontWeight: 'bold',
-                        background: 'linear-gradient(45deg, #66c0f4, #4a9eff)',
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        cursor: 'pointer',
-                    }}
-                    onClick={() => navigate('/')}
-                >
-                    NextPlay
-                </Typography>
-
-                {/* Navigation Links - MVP simplificado */}
-                <Box sx={{ flexGrow: 1, display: 'flex', gap: 1 }}>
-                    <Button
-                        color="inherit"
-                        startIcon={<Home />}
-                        onClick={() => navigate('/')}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                    <Box
                         sx={{
-                            backgroundColor: isActive('/') ? 'rgba(255,255,255,0.1)' : 'transparent',
-                            '&:hover': {
-                                backgroundColor: 'rgba(255,255,255,0.1)',
-                            },
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1.5,
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            backgroundClip: 'text',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
                         }}
                     >
-                        NextPlay - Recomendações Steam
-                    </Button>
+                        <Gamepad sx={{ fontSize: '2rem', color: '#667eea' }} />
+                        <Typography
+                            variant="h5"
+                            sx={{
+                                fontWeight: 800,
+                                fontSize: { xs: '1.3rem', md: '1.5rem' },
+                                letterSpacing: '-0.02em',
+                            }}
+                        >
+                            NextPlay
+                        </Typography>
+                    </Box>
                 </Box>
 
-                {/* User Menu */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {playerInfo ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Avatar
-                                src={playerInfo.avatar}
-                                alt={playerInfo.personaName}
-                                sx={{
-                                    width: 32,
-                                    height: 32,
-                                    border: '2px solid #66c0f4',
-                                    cursor: 'pointer'
-                                }}
-                                onClick={handleMenu}
-                            />
-                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                                <Typography variant="body2" sx={{
-                                    color: '#ffffff',
-                                    fontWeight: 600,
-                                    lineHeight: 1
-                                }}>
-                                    {playerInfo.personaName}
-                                </Typography>
-                                <Chip
-                                    label={playerInfo.isOnline ? 'Online' :
-                                        playerInfo.isAway ? 'Ausente' :
-                                            playerInfo.isBusy ? 'Ocupado' : 'Offline'}
-                                    size="small"
+                {/* User Profile Section */}
+                {steamId64 && playerInfo ? (
+                    <Fade in timeout={500}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {/* User Info */}
+                            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
+                                <Box sx={{ textAlign: 'right' }}>
+                                    <Typography
+                                        variant="body1"
+                                        sx={{
+                                            color: '#ffffff',
+                                            fontWeight: 600,
+                                            fontSize: '0.9rem',
+                                        }}
+                                    >
+                                        {playerInfo.personaName}
+                                    </Typography>
+                                    <Chip
+                                        label={playerInfo.isOnline ? 'Online' : 'Offline'}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: playerInfo.isOnline ? '#48bb78' : '#a0aec0',
+                                            color: '#ffffff',
+                                            fontWeight: 600,
+                                            fontSize: '0.7rem',
+                                            height: 20,
+                                        }}
+                                    />
+                                </Box>
+                                <Avatar
+                                    src={playerInfo.avatar}
+                                    onClick={handleMenuOpen}
                                     sx={{
-                                        height: 16,
-                                        fontSize: '0.7rem',
-                                        backgroundColor: playerInfo.isOnline ? '#4caf50' :
-                                            playerInfo.isAway ? '#ff9800' :
-                                                playerInfo.isBusy ? '#f44336' : '#9e9e9e',
-                                        color: '#ffffff',
-                                        '& .MuiChip-label': {
-                                            px: 1
-                                        }
+                                        width: 40,
+                                        height: 40,
+                                        border: '2px solid #667eea',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease-in-out',
+                                        '&:hover': {
+                                            transform: 'scale(1.1)',
+                                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                                        },
                                     }}
                                 />
                             </Box>
-                        </Box>
-                    ) : (
-                        <IconButton
-                            size="large"
-                            aria-label="account of current user"
-                            aria-controls="menu-appbar"
-                            aria-haspopup="true"
-                            onClick={handleMenu}
-                            color="inherit"
-                        >
-                            <AccountCircle />
-                        </IconButton>
-                    )}
 
-                    <Menu
-                        id="menu-appbar"
-                        anchorEl={anchorEl}
-                        anchorOrigin={{
-                            vertical: 'top',
-                            horizontal: 'right',
-                        }}
-                        keepMounted
-                        transformOrigin={{
-                            vertical: 'top',
-                            horizontal: 'right',
-                        }}
-                        open={Boolean(anchorEl)}
-                        onClose={handleClose}
-                        sx={{
-                            '& .MuiPaper-root': {
-                                backgroundColor: '#1b2838',
-                                border: '1px solid #2a475e',
-                            },
-                        }}
-                    >
-                        {playerInfo ? [
-                            <MenuItem key="profile" onClick={handleClose}>
-                                <AccountCircle sx={{ mr: 1 }} />
-                                {playerInfo.personaName}
-                            </MenuItem>,
-                            <MenuItem key="steam-profile" onClick={() => {
-                                window.open(playerInfo.profileUrl, '_blank');
-                                handleClose();
-                            }}>
-                                <AccountCircle sx={{ mr: 1 }} />
-                                Ver Perfil Steam
-                            </MenuItem>,
-                            <MenuItem key="logout" onClick={handleLogout}>
-                                <ExitToApp sx={{ mr: 1 }} />
-                                Desconectar
-                            </MenuItem>
-                        ] : (
-                            <MenuItem onClick={handleClose}>
-                                <AccountCircle sx={{ mr: 1 }} />
-                                Sobre NextPlay
-                            </MenuItem>
-                        )}
-                    </Menu>
-                </Box>
+                            {/* Mobile Avatar */}
+                            <Avatar
+                                src={playerInfo.avatar}
+                                onClick={handleMobileMenuOpen}
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    border: '2px solid #667eea',
+                                    cursor: 'pointer',
+                                    display: { xs: 'flex', md: 'none' },
+                                    transition: 'all 0.2s ease-in-out',
+                                    '&:hover': {
+                                        transform: 'scale(1.1)',
+                                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                                    },
+                                }}
+                            />
+
+                            {/* Desktop Menu */}
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={isMenuOpen}
+                                onClose={handleMenuClose}
+                                PaperProps={{
+                                    sx: {
+                                        background: 'rgba(26, 31, 46, 0.95)',
+                                        backdropFilter: 'blur(20px)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '16px',
+                                        mt: 1,
+                                        minWidth: 200,
+                                    },
+                                }}
+                                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                            >
+                                <MenuItem
+                                    onClick={handleViewSteamProfile}
+                                    sx={{
+                                        color: '#ffffff',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                        },
+                                    }}
+                                >
+                                    <Public sx={{ mr: 2, fontSize: '1.2rem' }} />
+                                    Ver Perfil Steam
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={handleLogout}
+                                    sx={{
+                                        color: '#e53e3e',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                                        },
+                                    }}
+                                >
+                                    <ExitToApp sx={{ mr: 2, fontSize: '1.2rem' }} />
+                                    Desconectar
+                                </MenuItem>
+                            </Menu>
+
+                            {/* Mobile Menu */}
+                            <Menu
+                                anchorEl={mobileMenuAnchor}
+                                open={isMobileMenuOpen}
+                                onClose={handleMobileMenuClose}
+                                PaperProps={{
+                                    sx: {
+                                        background: 'rgba(26, 31, 46, 0.95)',
+                                        backdropFilter: 'blur(20px)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '16px',
+                                        mt: 1,
+                                        minWidth: 200,
+                                    },
+                                }}
+                                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                            >
+                                <Box sx={{ px: 2, py: 1, borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                                    <Typography variant="body2" sx={{ color: '#a0aec0', fontSize: '0.8rem' }}>
+                                        {playerInfo.personaName}
+                                    </Typography>
+                                    <Chip
+                                        label={playerInfo.isOnline ? 'Online' : 'Offline'}
+                                        size="small"
+                                        sx={{
+                                            backgroundColor: playerInfo.isOnline ? '#48bb78' : '#a0aec0',
+                                            color: '#ffffff',
+                                            fontWeight: 600,
+                                            fontSize: '0.7rem',
+                                            height: 20,
+                                            mt: 0.5,
+                                        }}
+                                    />
+                                </Box>
+                                <MenuItem
+                                    onClick={handleViewSteamProfile}
+                                    sx={{
+                                        color: '#ffffff',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                        },
+                                    }}
+                                >
+                                    <Public sx={{ mr: 2, fontSize: '1.2rem' }} />
+                                    Ver Perfil Steam
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={handleLogout}
+                                    sx={{
+                                        color: '#e53e3e',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(229, 62, 62, 0.1)',
+                                        },
+                                    }}
+                                >
+                                    <ExitToApp sx={{ mr: 2, fontSize: '1.2rem' }} />
+                                    Desconectar
+                                </MenuItem>
+                            </Menu>
+                        </Box>
+                    </Fade>
+                ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: '#a0aec0',
+                                fontSize: '0.8rem',
+                                display: { xs: 'none', sm: 'block' },
+                            }}
+                        >
+                            Conecte sua Steam para começar
+                        </Typography>
+                        <IconButton
+                            color="inherit"
+                            sx={{
+                                color: '#a0aec0',
+                                '&:hover': {
+                                    color: '#667eea',
+                                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                },
+                            }}
+                        >
+                            <Info />
+                        </IconButton>
+                    </Box>
+                )}
             </Toolbar>
         </AppBar>
     );

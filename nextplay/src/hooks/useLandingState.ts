@@ -1,43 +1,28 @@
 import { useState, useMemo } from 'react';
 
-export type LanguageOption = 'dublado' | 'legendado' | 'indiferente';
-
 export interface LandingFilters {
-    vibe?: ('relax' | 'historia' | 'raiva' | 'intelecto' | 'competitivo' | 'coop' | 'explorar' | 'nostalgia' | 'dificil' | 'casual_rapido')[] | 'relax' | 'historia' | 'raiva' | 'intelecto' | 'competitivo' | 'coop' | 'explorar' | 'nostalgia' | 'dificil' | 'casual_rapido';
-    duration?: 'rapido' | 'medio' | 'longo' | 'muito_longo' | 'tanto_faz';
-    energy?: 'baixa' | 'normal' | 'alta';
-    social?: 'solo' | 'coop' | 'pvp';
-    contentTone?: 'evitar_pesado' | 'indiferente' | 'topa_pesado';
-    controllerPreferred?: boolean;
-    lang?: LanguageOption[];
-    structure?: 'campaign' | 'replay';
-    flavors?: string[];
+    vibe?: string[];
+    time?: string[];
+    energy?: string[];
+    lang?: string[];
     limit?: number;
 }
 
 export interface RecommendationPayload {
     steamId64: string;
-    vibe: NonNullable<LandingFilters['vibe']>;
-    duration: NonNullable<LandingFilters['duration']>;
-    energy: NonNullable<LandingFilters['energy']>;
-    social: NonNullable<LandingFilters['social']>;
-    contentTone: NonNullable<LandingFilters['contentTone']>;
-    controllerPreferred: NonNullable<LandingFilters['controllerPreferred']>;
-    lang: string; // Backend espera string, não array
-    structure: NonNullable<LandingFilters['structure']>;
-    flavors: NonNullable<LandingFilters['flavors']>;
+    vibe: string;
+    time: string;
+    energy: string;
+    lang: string;
     limit: number;
 }
 
 export const useLandingState = () => {
     const [filters, setFilters] = useState<LandingFilters>({
-        energy: 'normal',
-        social: 'solo',
-        contentTone: 'indiferente',
-        controllerPreferred: false,
-        lang: ['dublado', 'legendado'],
-        structure: 'campaign',
-        flavors: [],
+        vibe: [],
+        time: [],
+        energy: [],
+        lang: [],
         limit: 20,
     });
 
@@ -51,76 +36,44 @@ export const useLandingState = () => {
     const toggleFlavor = (flavor: string) => {
         setFilters(prev => ({
             ...prev,
-            flavors: prev.flavors?.includes(flavor)
-                ? prev.flavors.filter(f => f !== flavor)
-                : [...(prev.flavors || []), flavor]
+            vibe: prev.vibe?.includes(flavor)
+                ? prev.vibe.filter(f => f !== flavor)
+                : [...(prev.vibe || []), flavor]
         }));
     };
 
     const isValid = useMemo(() => {
-        const hasVibe = filters.vibe && (
-            Array.isArray(filters.vibe) ? filters.vibe.length > 0 : true
-        );
-        return !!(hasVibe && filters.duration);
-    }, [filters.vibe, filters.duration]);
+        return (filters.vibe?.length || 0) > 0;
+    }, [filters.vibe]);
 
     const buildPayload = (steamId64: string): RecommendationPayload => {
-        const hasVibe = filters.vibe && (
-            Array.isArray(filters.vibe) ? filters.vibe.length > 0 : true
-        );
-
-        if (!hasVibe || !filters.duration) {
-            throw new Error('Vibe e duração são obrigatórios');
-        }
-
         return {
             steamId64,
-            vibe: filters.vibe || [],
-            duration: filters.duration!,
-            energy: filters.energy!,
-            social: filters.social!,
-            contentTone: filters.contentTone!,
-            controllerPreferred: filters.controllerPreferred!,
-            lang: Array.isArray(filters.lang) ? filters.lang.join(',') : 'indiferente',
-            structure: filters.structure!,
-            flavors: filters.flavors || [],
+            vibe: filters.vibe?.join(',') || 'relaxar',
+            time: filters.time?.join(',') || 'medio',
+            energy: filters.energy?.join(',') || 'normal',
+            lang: filters.lang?.join(',') || 'indiferente',
             limit: filters.limit || 20,
         };
     };
 
     const buildDiscoverPayload = () => {
-        const hasVibe = filters.vibe && (
-            Array.isArray(filters.vibe) ? filters.vibe.length > 0 : true
-        );
-
-        if (!hasVibe || !filters.duration) {
-            throw new Error('Vibe e duração são obrigatórios');
-        }
-
         return {
-            vibe: Array.isArray(filters.vibe) ? filters.vibe.filter(Boolean) : (filters.vibe ? [filters.vibe] : []),
-            duration: filters.duration,
-            energy: filters.energy || 'normal',
-            social: filters.social || 'tanto_faz',
-            contentTone: filters.contentTone || 'indiferente',
-            controllerPreferred: filters.controllerPreferred,
-            lang: filters.lang || ['indiferente'],
-            structure: filters.structure || 'tanto_faz',
-            flavors: filters.flavors || [],
+            vibe: filters.vibe || [],
+            time: filters.time || [],
+            energy: filters.energy || [],
+            lang: filters.lang || [],
             limit: filters.limit || 20,
         };
     };
 
     const resetFilters = () => {
         setFilters({
-            energy: 'normal',
-            social: 'solo',
-            contentTone: 'indiferente',
-            controllerPreferred: false,
-            lang: ['dublado', 'legendado'],
-            structure: 'campaign',
-            flavors: [],
-            limit: 12,
+            vibe: [],
+            time: [],
+            energy: [],
+            lang: [],
+            limit: 20,
         });
     };
 

@@ -9,22 +9,18 @@ import { GameCard } from '../../components/GameCard/GameCard';
 import { GameDetailsModal } from '../../components/GameDetailsModal/GameDetailsModal';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { useRefresh } from '../../hooks/useApi';
-import { useToast } from '../../hooks/useToast';
+// import { useToast } from '../../hooks/useToast';
 import { formatDate } from '../../utils/format';
 import { useState } from 'react';
 
 export const HistoryPage = () => {
-    const { showToast } = useToast();
+    // const { showToast } = useToast();
     const [selectedGame, setSelectedGame] = useState<any>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
     const refreshMutation = useRefresh();
 
 
-    const handlePlay = (_gameId: string) => {
-        // Implementar lógica para abrir o jogo na Steam
-        showToast('Abrindo jogo na Steam...', 'info');
-    };
 
     const handleViewDetails = (game: any) => {
         setSelectedGame(game);
@@ -115,7 +111,6 @@ export const HistoryPage = () => {
                                 <Grid key={game.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                                     <GameCard
                                         game={game}
-                                        onPlay={handlePlay}
                                         onViewDetails={handleViewDetails}
                                     />
                                 </Grid>

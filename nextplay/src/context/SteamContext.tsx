@@ -13,6 +13,7 @@ interface SteamPlayerInfo {
     countryCode?: string;
     stateCode?: string;
     createdDate?: string;
+    steamId64?: string;
 }
 
 interface SteamContextType {

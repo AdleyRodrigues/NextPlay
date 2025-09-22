@@ -211,6 +211,192 @@ public class SteamApiService
             return null;
         }
     }
+
+    public async Task<SteamReviewsResponse?> GetGameReviewsAsync(int appId, int numPerPage = 3)
+    {
+        try
+        {
+            _logger.LogInformation("📝 [GetGameReviewsAsync] Fetching reviews for app {AppId}", appId);
+
+            var url = $"https://store.steampowered.com/appreviews/{appId}?json=1&language=portuguese&num_per_page={numPerPage}&review_type=all&purchase_type=all&filter=all";
+
+            _logger.LogInformation("📝 [GetGameReviewsAsync] URL: {Url}", url);
+
+            var response = await _httpClient.GetAsync(url);
+            _logger.LogInformation("📝 [GetGameReviewsAsync] Response status: {StatusCode}", response.StatusCode);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("📝 [GetGameReviewsAsync] Steam Store API returned {StatusCode} for reviews", response.StatusCode);
+                return null;
+            }
+
+            var jsonContent = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("📝 [GetGameReviewsAsync] Raw response length: {Length} chars", jsonContent.Length);
+
+            var steamResponse = JsonSerializer.Deserialize<SteamReviewsResponse>(jsonContent);
+
+            if (steamResponse?.Reviews != null)
+            {
+                _logger.LogInformation("📝 [GetGameReviewsAsync] Successfully parsed {Count} reviews", steamResponse.Reviews.Count);
+            }
+            else
+            {
+                _logger.LogWarning("📝 [GetGameReviewsAsync] No reviews found in response");
+            }
+
+            return steamResponse;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "📝 [GetGameReviewsAsync] Error fetching reviews for app {AppId}", appId);
+            return null;
+        }
+    }
+}
+
+public class SteamReviewsResponse
+{
+    [JsonPropertyName("success")]
+    public int Success { get; set; }
+
+    [JsonPropertyName("query_summary")]
+    public SteamQuerySummary QuerySummary { get; set; } = new();
+
+    [JsonPropertyName("reviews")]
+    public List<SteamReview> Reviews { get; set; } = new();
+}
+
+public class SteamQuerySummary
+{
+    [JsonPropertyName("num_reviews")]
+    public int NumReviews { get; set; }
+
+    [JsonPropertyName("review_score")]
+    public int ReviewScore { get; set; }
+
+    [JsonPropertyName("review_score_desc")]
+    public string ReviewScoreDesc { get; set; } = string.Empty;
+
+    [JsonPropertyName("total_positive")]
+    public int TotalPositive { get; set; }
+
+    [JsonPropertyName("total_negative")]
+    public int TotalNegative { get; set; }
+
+    [JsonPropertyName("total_reviews")]
+    public int TotalReviews { get; set; }
+}
+
+public class SteamReview
+{
+    [JsonPropertyName("recommendationid")]
+    public string RecommendationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("author")]
+    public SteamReviewAuthor Author { get; set; } = new();
+
+    [JsonPropertyName("review")]
+    public string Review { get; set; } = string.Empty;
+
+    [JsonPropertyName("timestamp_created")]
+    public long TimestampCreated { get; set; }
+
+    [JsonPropertyName("timestamp_updated")]
+    public long TimestampUpdated { get; set; }
+
+    [JsonPropertyName("voted_up")]
+    public bool VotedUp { get; set; }
+
+    [JsonPropertyName("votes_up")]
+    public int VotesUp { get; set; }
+
+    [JsonPropertyName("votes_funny")]
+    public int VotesFunny { get; set; }
+
+    [JsonPropertyName("weighted_vote_score")]
+    [JsonConverter(typeof(StringOrNumberConverter))]
+    public string WeightedVoteScore { get; set; } = string.Empty;
+
+    [JsonPropertyName("comment_count")]
+    public int CommentCount { get; set; }
+
+    [JsonPropertyName("steam_purchase")]
+    public bool SteamPurchase { get; set; }
+
+    [JsonPropertyName("received_for_free")]
+    public bool ReceivedForFree { get; set; }
+
+    [JsonPropertyName("written_during_early_access")]
+    public bool WrittenDuringEarlyAccess { get; set; }
+
+    [JsonPropertyName("playtime_forever")]
+    public int PlaytimeForever { get; set; }
+
+    [JsonPropertyName("playtime_at_review")]
+    public int PlaytimeAtReview { get; set; }
+
+    [JsonPropertyName("playtime_last_two_weeks")]
+    public int PlaytimeLastTwoWeeks { get; set; }
+
+    [JsonPropertyName("last_played")]
+    public long LastPlayed { get; set; }
+}
+
+public class SteamReviewAuthor
+{
+    [JsonPropertyName("steamid")]
+    public string SteamId { get; set; } = string.Empty;
+
+    [JsonPropertyName("num_games_owned")]
+    public int NumGamesOwned { get; set; }
+
+    [JsonPropertyName("num_reviews")]
+    public int NumReviews { get; set; }
+
+    [JsonPropertyName("playtime_forever")]
+    public int PlaytimeForever { get; set; }
+
+    [JsonPropertyName("playtime_last_two_weeks")]
+    public int PlaytimeLastTwoWeeks { get; set; }
+
+    [JsonPropertyName("last_played")]
+    public long LastPlayed { get; set; }
+}
+
+public class StringOrNumberConverter : JsonConverter<string>
+{
+    public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Number)
+        {
+            // Tenta diferentes tipos de número para lidar com valores grandes
+            if (reader.TryGetInt32(out int intValue))
+            {
+                return intValue.ToString();
+            }
+            if (reader.TryGetInt64(out long longValue))
+            {
+                return longValue.ToString();
+            }
+            if (reader.TryGetDouble(out double doubleValue))
+            {
+                return doubleValue.ToString();
+            }
+            // Se nada funcionar, lê como string
+            return reader.GetString() ?? "0";
+        }
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            return reader.GetString() ?? string.Empty;
+        }
+        throw new JsonException($"Unable to convert {reader.TokenType} to string");
+    }
+
+    public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value);
+    }
 }
 
 // DTOs para a Steam API

@@ -12,15 +12,22 @@ import {
     Card,
     CardContent,
     IconButton,
+    Stack,
+    Paper,
 } from '@mui/material';
 import {
     Close,
     AccessTime,
     Star,
     PlayArrow,
+    TrendingUp,
+    EmojiEvents,
+    Psychology,
+    Lightbulb,
 } from '@mui/icons-material';
 import { formatHours } from '../../utils/format';
 import type { Game } from '../../api/schemas';
+import { apiClient } from '../../api/client';
 
 interface GameDetailsModalProps {
     open: boolean;
@@ -33,6 +40,43 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
     onClose,
     game,
 }) => {
+    const [reviews, setReviews] = React.useState<Array<{
+        author: { steamId: string };
+        review: string;
+        votedUp: boolean;
+        votesUp: number;
+        votesFunny: number;
+        playtimeAtReview: number;
+    }>>([]);
+    const [loadingReviews, setLoadingReviews] = React.useState(false);
+
+    const fetchReviews = React.useCallback(async () => {
+        if (!game?.id) return;
+
+        setLoadingReviews(true);
+        try {
+            // Extrair appId do ID do jogo (assumindo que o ID é o appId do Steam)
+            const appId = parseInt(game.id);
+            if (isNaN(appId)) return;
+
+            const response = await apiClient.getGameReviews(appId);
+            if (response?.reviews) {
+                setReviews(response.reviews);
+            }
+        } catch (error) {
+            console.error('Error fetching reviews:', error);
+            setReviews([]);
+        } finally {
+            setLoadingReviews(false);
+        }
+    }, [game?.id]);
+
+    React.useEffect(() => {
+        if (open && game) {
+            fetchReviews();
+        }
+    }, [open, game, fetchReviews]);
+
     if (!game) return null;
 
     const playtimeHours = game.hoursPlayed || 0;
@@ -84,12 +128,12 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
     const remainingAchievements = totalAchievements - unlockedAchievements;
 
     const getProgressStatus = () => {
-        if (progressPercentage >= 100) return { text: 'Completado!', color: '#4caf50' };
-        if (progressPercentage >= 80) return { text: 'Quase terminado!', color: '#ff9800' };
-        if (progressPercentage >= 50) return { text: 'Bem avançado', color: '#2196f3' };
-        if (progressPercentage >= 20) return { text: 'Em progresso', color: '#9c27b0' };
-        if (playtimeHours > 0) return { text: 'Recém começado', color: '#607d8b' };
-        return { text: 'Não jogado', color: '#f44336' };
+        if (progressPercentage >= 100) return { text: 'Completado!', color: '#48bb78', icon: '🎉' };
+        if (progressPercentage >= 80) return { text: 'Quase terminado!', color: '#ed8936', icon: '🎯' };
+        if (progressPercentage >= 50) return { text: 'Bem avançado', color: '#4299e1', icon: '🚀' };
+        if (progressPercentage >= 20) return { text: 'Em progresso', color: '#9f7aea', icon: '⚡' };
+        if (playtimeHours > 0) return { text: 'Recém começado', color: '#38b2ac', icon: '🌱' };
+        return { text: 'Não jogado', color: '#e53e3e', icon: '💤' };
     };
 
     const progressStatus = getProgressStatus();
@@ -118,7 +162,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                 icon: '🎯',
                 title: 'Meta de Conclusão',
                 description: `Você está a apenas ${Math.round(estimatedHours - playtimeHours)}h de completar este jogo!`,
-                color: '#ff9800'
+                color: '#ed8936'
             });
         }
 
@@ -128,7 +172,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                 icon: '🏆',
                 title: 'Obra-Prima',
                 description: `Metacritic ${game.metaScore} - Este é um dos melhores jogos já feitos!`,
-                color: '#4caf50'
+                color: '#48bb78'
             });
         }
 
@@ -138,7 +182,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                 icon: '🚀',
                 title: 'Potencial Inexplorado',
                 description: 'Você mal começou a explorar este mundo incrível!',
-                color: '#2196f3'
+                color: '#4299e1'
             });
         }
 
@@ -152,7 +196,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                     icon: '💎',
                     title: 'Clássico Esquecido',
                     description: 'Este jogo merece uma segunda chance!',
-                    color: '#9c27b0'
+                    color: '#9f7aea'
                 });
             }
         }
@@ -162,6 +206,12 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
 
     const gameAnalysis = getGameAnalysis();
 
+    const getScoreColor = (score: number) => {
+        if (score >= 80) return '#48bb78';
+        if (score >= 60) return '#ed8936';
+        return '#e53e3e';
+    };
+
     return (
         <Dialog
             open={open}
@@ -170,376 +220,702 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
             fullWidth
             PaperProps={{
                 sx: {
-                    backgroundColor: '#1b2838',
+                    background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #2d3748 100%)',
                     color: '#ffffff',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(102, 192, 244, 0.3)',
-                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                    background: 'linear-gradient(135deg, #1b2838 0%, #2a475e 100%)',
+                    borderRadius: '24px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.5)',
+                    backdropFilter: 'blur(20px)',
+                    overflow: 'hidden',
+                }
+            }}
+            BackdropProps={{
+                sx: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backdropFilter: 'blur(10px)',
                 }
             }}
         >
+            {/* Header */}
             <DialogTitle sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: '1px solid rgba(102, 192, 244, 0.2)',
-                pb: 3,
-                pt: 3,
-                px: 4,
-                background: 'linear-gradient(90deg, rgba(102, 192, 244, 0.1) 0%, transparent 100%)',
+                p: 0,
+                position: 'relative',
+                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
             }}>
-                <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#66c0f4', mb: 0.5 }}>
-                        {game.name}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#c7d5e0', opacity: 0.8 }}>
-                        Análise detalhada do jogo
-                    </Typography>
+                <Box sx={{ p: 4, pb: 2 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                        <Box sx={{ flex: 1 }}>
+                            <Typography
+                                variant="h3"
+                                sx={{
+                                    fontWeight: 800,
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    backgroundClip: 'text',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    mb: 1,
+                                    fontSize: { xs: '1.8rem', md: '2.5rem' },
+                                    lineHeight: 1.2,
+                                }}
+                            >
+                                {game.name}
+                            </Typography>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    color: '#a0aec0',
+                                    fontWeight: 500,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                }}
+                            >
+                                <Psychology sx={{ fontSize: '1.2rem' }} />
+                                Análise detalhada do jogo
+                            </Typography>
+                        </Box>
+                        <IconButton
+                            onClick={onClose}
+                            sx={{
+                                color: '#a0aec0',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                    color: '#ffffff',
+                                    transform: 'scale(1.05)',
+                                },
+                                transition: 'all 0.2s ease-in-out',
+                            }}
+                        >
+                            <Close />
+                        </IconButton>
+                    </Stack>
                 </Box>
-                <IconButton
-                    onClick={onClose}
-                    sx={{
-                        color: '#c7d5e0',
-                        backgroundColor: 'rgba(102, 192, 244, 0.1)',
-                        '&:hover': {
-                            backgroundColor: 'rgba(102, 192, 244, 0.2)',
-                            color: '#66c0f4',
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                    }}
-                >
-                    <Close />
-                </IconButton>
             </DialogTitle>
 
-            <DialogContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
-                    {/* Imagem do Jogo */}
-                    <Box sx={{ flex: { xs: '1', md: '0 0 33%' } }}>
-                        <Box
-                            component="img"
-                            src={game.coverImage}
-                            alt={game.name}
-                            sx={{
-                                width: '100%',
-                                height: 200,
-                                objectFit: 'contain',
-                                backgroundColor: '#2a475e',
-                                borderRadius: '8px',
-                                border: '1px solid #66c0f4',
-                            }}
-                        />
-                    </Box>
-
-                    {/* Informações Básicas */}
-                    <Box sx={{ flex: { xs: '1', md: '0 0 67%' } }}>
-                        <Box sx={{ mb: 2 }}>
-                            {/* Scores */}
-                            <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                                {game.metaScore && (
-                                    <Chip
-                                        label={`Meta: ${game.metaScore}`}
-                                        sx={{
-                                            bgcolor: game.metaScore >= 75 ? '#a1d44a' : '#ff6b6b',
-                                            color: '#1b2838',
-                                            fontWeight: 600,
-                                        }}
-                                    />
-                                )}
-                                {game.openCriticScore && (
-                                    <Chip
-                                        label={`OC: ${game.openCriticScore}`}
-                                        sx={{
-                                            bgcolor: game.openCriticScore >= 75 ? '#a1d44a' : '#ff6b6b',
-                                            color: '#1b2838',
-                                            fontWeight: 600,
-                                        }}
-                                    />
-                                )}
-                                {game.steamScore && (
-                                    <Chip
-                                        icon={<Star sx={{ fontSize: '16px !important' }} />}
-                                        label={`${game.steamScore}%`}
-                                        sx={{
-                                            bgcolor: '#66c0f4',
-                                            color: '#1b2838',
-                                            fontWeight: 600,
-                                        }}
-                                    />
-                                )}
-                            </Box>
-
-                            {/* Duração */}
-                            {estimatedHours > 0 && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                    <AccessTime sx={{ color: '#c7d5e0' }} />
-                                    <Typography variant="body2" sx={{ color: '#c7d5e0' }}>
-                                        ~{estimatedHours}h para completar o jogo
-                                        {!game.hltbMain && <span style={{ opacity: 0.7 }}> (estimativa baseada no gênero)</span>}
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Box>
-                    </Box>
-                </Box>
-
-                {/* Progresso do Jogo */}
-                <Box sx={{ mt: 3 }}>
-                    <Card sx={{
-                        backgroundColor: 'rgba(42, 71, 94, 0.6)',
-                        border: '1px solid rgba(102, 192, 244, 0.3)',
-                        backdropFilter: 'blur(10px)',
-                        borderRadius: '16px',
-                    }}>
-                        <CardContent sx={{ p: 3 }}>
-                            <Typography variant="h6" sx={{ mb: 3, color: '#66c0f4', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                📊 Progresso do Jogo
-                            </Typography>
-
-                            <Box sx={{ mb: 3 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                    <Typography variant="body2" sx={{ color: '#c7d5e0' }}>
-                                        Tempo jogado: {formatHours(game.hoursPlayed || 0)}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: progressStatus.color, fontWeight: 600 }}>
-                                        {progressStatus.text}
-                                    </Typography>
-                                </Box>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={Math.min(progressPercentage, 100)}
+            <DialogContent sx={{ p: 0 }}>
+                {/* Game Image and Basic Info */}
+                <Box sx={{ p: 4, pb: 2 }}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={4}>
+                        {/* Game Image */}
+                        <Box sx={{ flex: { xs: '1', md: '0 0 40%' } }}>
+                            <Paper
+                                sx={{
+                                    position: 'relative',
+                                    borderRadius: '16px',
+                                    overflow: 'hidden',
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    '&:hover': {
+                                        transform: 'scale(1.02)',
+                                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                                    },
+                                    transition: 'all 0.3s ease-in-out',
+                                }}
+                            >
+                                <Box
+                                    component="img"
+                                    src={game.coverImage}
+                                    alt={game.name}
                                     sx={{
-                                        height: 10,
-                                        borderRadius: 5,
-                                        backgroundColor: 'rgba(102, 192, 244, 0.2)',
-                                        '& .MuiLinearProgress-bar': {
-                                            backgroundColor: progressStatus.color,
-                                            borderRadius: 5,
-                                        },
+                                        width: '100%',
+                                        height: { xs: 200, md: 300 },
+                                        objectFit: 'cover',
+                                        display: 'block',
                                     }}
                                 />
-                                <Typography variant="caption" sx={{ color: '#c7d5e0', mt: 1, display: 'block' }}>
-                                    {progressPercentage.toFixed(1)}% completo
-                                    {estimatedHours > 0 && ` (estimativa: ~${estimatedHours}h para completar)`}
-                                </Typography>
-                            </Box>
+                                {/* Overlay with play button */}
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        background: 'rgba(0, 0, 0, 0.7)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        opacity: 0,
+                                        transition: 'opacity 0.3s ease-in-out',
+                                        '&:hover': {
+                                            opacity: 1,
+                                        },
+                                    }}
+                                >
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<PlayArrow />}
+                                        onClick={() => window.open(`https://store.steampowered.com/app/${game.id}`, '_blank')}
+                                        sx={{
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: '#ffffff',
+                                            fontWeight: 700,
+                                            px: 4,
+                                            py: 2,
+                                            borderRadius: '12px',
+                                            textTransform: 'none',
+                                            fontSize: '1.1rem',
+                                            boxShadow: '0 8px 20px rgba(102, 126, 234, 0.4)',
+                                            '&:hover': {
+                                                background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                                                transform: 'translateY(-2px)',
+                                                boxShadow: '0 12px 25px rgba(102, 126, 234, 0.5)',
+                                            },
+                                            transition: 'all 0.2s ease-in-out',
+                                        }}
+                                    >
+                                        Jogar no Steam
+                                    </Button>
+                                </Box>
+                            </Paper>
+                        </Box>
 
-                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                <Box sx={{ flex: 1, textAlign: 'center', p: 2, backgroundColor: 'rgba(102, 192, 244, 0.1)', borderRadius: '12px' }}>
-                                    <Typography variant="h4" sx={{ color: '#66c0f4', fontWeight: 700 }}>
-                                        {playtimeHours.toFixed(1)}h
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: '#c7d5e0' }}>
-                                        Tempo jogado
-                                    </Typography>
+                        {/* Game Info */}
+                        <Box sx={{ flex: 1 }}>
+                            <Stack spacing={3}>
+                                {/* Scores */}
+                                <Box>
+                                    <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+                                        {game.metaScore && (
+                                            <Chip
+                                                label={`Meta: ${game.metaScore}`}
+                                                sx={{
+                                                    backgroundColor: getScoreColor(game.metaScore),
+                                                    color: '#ffffff',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.9rem',
+                                                    px: 2,
+                                                    py: 1,
+                                                }}
+                                            />
+                                        )}
+                                        {game.openCriticScore && (
+                                            <Chip
+                                                label={`OC: ${game.openCriticScore}`}
+                                                sx={{
+                                                    backgroundColor: getScoreColor(game.openCriticScore),
+                                                    color: '#ffffff',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.9rem',
+                                                    px: 2,
+                                                    py: 1,
+                                                }}
+                                            />
+                                        )}
+                                        {game.steamScore && (
+                                            <Chip
+                                                icon={<Star sx={{ fontSize: '1rem' }} />}
+                                                label={`${game.steamScore}%`}
+                                                sx={{
+                                                    backgroundColor: '#4299e1',
+                                                    color: '#ffffff',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.9rem',
+                                                    px: 2,
+                                                    py: 1,
+                                                }}
+                                            />
+                                        )}
+                                    </Stack>
                                 </Box>
-                                <Box sx={{ flex: 1, textAlign: 'center', p: 2, backgroundColor: 'rgba(255, 152, 0, 0.1)', borderRadius: '12px' }}>
-                                    <Typography variant="h6" sx={{ color: '#ff9800', fontWeight: 700, fontSize: '1.2rem' }}>
-                                        {getLastPlayedText()}
+
+                                {/* User Reviews */}
+                                <Box>
+                                    <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 600 }}>
+                                        Avaliações de Usuários
                                     </Typography>
-                                    <Typography variant="caption" sx={{ color: '#c7d5e0' }}>
-                                        Último jogo
-                                    </Typography>
+                                    {loadingReviews ? (
+                                        <Box sx={{ textAlign: 'center', py: 3 }}>
+                                            <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                                Carregando avaliações...
+                                            </Typography>
+                                        </Box>
+                                    ) : reviews.length > 0 ? (
+                                        <Stack spacing={2}>
+                                            {reviews.map((review, index) => (
+                                                <Paper
+                                                    key={index}
+                                                    sx={{
+                                                        p: 2,
+                                                        background: 'rgba(255, 255, 255, 0.05)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                        borderRadius: '12px',
+                                                    }}
+                                                >
+                                                    <Stack direction="row" spacing={2} alignItems="flex-start">
+                                                        <Box
+                                                            sx={{
+                                                                width: 32,
+                                                                height: 32,
+                                                                borderRadius: '50%',
+                                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                color: '#ffffff',
+                                                                fontWeight: 600,
+                                                                fontSize: '0.8rem',
+                                                            }}
+                                                        >
+                                                            {review.author.steamId.charAt(0).toUpperCase()}
+                                                        </Box>
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                                                                <Typography variant="body2" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                                                                    Steam User
+                                                                </Typography>
+                                                                <Stack direction="row" spacing={0.5}>
+                                                                    {[...Array(5)].map((_, i) => (
+                                                                        <Star
+                                                                            key={i}
+                                                                            sx={{
+                                                                                fontSize: '0.8rem',
+                                                                                color: i < (review.votedUp ? 5 : 2) ? '#ffd700' : '#a0aec0',
+                                                                            }}
+                                                                        />
+                                                                    ))}
+                                                                </Stack>
+                                                                <Chip
+                                                                    label={review.votedUp ? 'Recomendado' : 'Não Recomendado'}
+                                                                    size="small"
+                                                                    sx={{
+                                                                        backgroundColor: review.votedUp ? '#48bb78' : '#e53e3e',
+                                                                        color: '#ffffff',
+                                                                        fontSize: '0.7rem',
+                                                                        height: 20,
+                                                                    }}
+                                                                />
+                                                            </Stack>
+                                                            <Typography variant="body2" sx={{ color: '#a0aec0', lineHeight: 1.4, mb: 1 }}>
+                                                                {review.review}
+                                                            </Typography>
+                                                            <Stack direction="row" spacing={2} alignItems="center">
+                                                                <Typography variant="caption" sx={{ color: '#718096' }}>
+                                                                    {review.playtimeAtReview > 0 ? `${Math.round(review.playtimeAtReview / 60)}h jogadas` : 'Recém comprado'}
+                                                                </Typography>
+                                                                {review.votesUp > 0 && (
+                                                                    <Typography variant="caption" sx={{ color: '#718096' }}>
+                                                                        👍 {review.votesUp} útil
+                                                                    </Typography>
+                                                                )}
+                                                                {review.votesFunny > 0 && (
+                                                                    <Typography variant="caption" sx={{ color: '#718096' }}>
+                                                                        😂 {review.votesFunny} engraçado
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </Box>
+                                                    </Stack>
+                                                </Paper>
+                                            ))}
+                                        </Stack>
+                                    ) : (
+                                        <Box sx={{ textAlign: 'center', py: 3 }}>
+                                            <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                                                Nenhuma avaliação curta em português encontrada para este jogo
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: '#718096', mt: 1, display: 'block' }}>
+                                                Tente novamente mais tarde ou verifique se o jogo tem reviews curtas em português
+                                            </Typography>
+                                        </Box>
+                                    )}
                                 </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
+
+                                {/* Duration */}
+                                {estimatedHours > 0 && (
+                                    <Box>
+                                        <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 600 }}>
+                                            Duração
+                                        </Typography>
+                                        <Stack direction="row" spacing={2} alignItems="center">
+                                            <AccessTime sx={{ color: '#667eea', fontSize: '1.5rem' }} />
+                                            <Box>
+                                                <Typography variant="body1" sx={{ color: '#ffffff', fontWeight: 600 }}>
+                                                    ~{estimatedHours}h para completar
+                                                </Typography>
+                                                {!game.hltbMain && (
+                                                    <Typography variant="body2" sx={{ color: '#a0aec0', fontSize: '0.8rem' }}>
+                                                        (estimativa baseada no gênero)
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Stack>
+                                    </Box>
+                                )}
+
+                                {/* Genres */}
+                                {game.genres && game.genres.length > 0 && (
+                                    <Box>
+                                        <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 600 }}>
+                                            Gêneros
+                                        </Typography>
+                                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                            {game.genres.map((genre, index) => (
+                                                <Chip
+                                                    key={index}
+                                                    label={genre}
+                                                    size="small"
+                                                    sx={{
+                                                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                                                        color: '#667eea',
+                                                        border: '1px solid rgba(102, 126, 234, 0.3)',
+                                                        fontWeight: 500,
+                                                    }}
+                                                />
+                                            ))}
+                                        </Stack>
+                                    </Box>
+                                )}
+
+                            </Stack>
+                        </Box>
+                    </Stack>
                 </Box>
 
-                {/* Conquistas */}
-                <Box sx={{ mt: 3 }}>
+                {/* Progress Section */}
+                <Box sx={{ px: 4, pb: 2 }}>
                     <Card sx={{
-                        backgroundColor: 'rgba(42, 71, 94, 0.6)',
-                        border: '1px solid rgba(102, 192, 244, 0.3)',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '20px',
                         backdropFilter: 'blur(10px)',
-                        borderRadius: '16px',
                     }}>
-                        <CardContent sx={{ p: 3 }}>
-                            <Typography variant="h6" sx={{ mb: 3, color: '#66c0f4', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                🏆 Conquistas
-                            </Typography>
+                        <CardContent sx={{ p: 4 }}>
+                            <Stack spacing={3}>
+                                <Typography variant="h5" sx={{ color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <TrendingUp sx={{ fontSize: '1.8rem', color: '#667eea' }} />
+                                    Progresso do Jogo
+                                </Typography>
 
-                            {totalAchievements > 0 ? (
-                                <>
-                                    <Box sx={{ mb: 3 }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                            <Typography variant="body2" sx={{ color: '#c7d5e0' }}>
-                                                {unlockedAchievements} de {totalAchievements} conquistas
+                                <Box>
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                                        <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+                                            Tempo jogado: {formatHours(playtimeHours)}
+                                        </Typography>
+                                        <Stack direction="row" alignItems="center" spacing={1}>
+                                            <Typography variant="body1" sx={{ fontSize: '1.2rem' }}>
+                                                {progressStatus.icon}
                                             </Typography>
-                                            <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 600 }}>
-                                                {Math.round((unlockedAchievements / totalAchievements) * 100)}% completo
+                                            <Typography variant="body1" sx={{ color: progressStatus.color, fontWeight: 600 }}>
+                                                {progressStatus.text}
                                             </Typography>
-                                        </Box>
-                                        <LinearProgress
-                                            variant="determinate"
-                                            value={(unlockedAchievements / totalAchievements) * 100}
-                                            sx={{
-                                                height: 10,
-                                                borderRadius: 5,
-                                                backgroundColor: 'rgba(76, 175, 80, 0.2)',
-                                                '& .MuiLinearProgress-bar': {
-                                                    backgroundColor: '#4caf50',
-                                                    borderRadius: 5,
-                                                },
-                                            }}
-                                        />
-                                    </Box>
-
-                                    <Box sx={{ display: 'flex', gap: 2 }}>
-                                        <Box sx={{ flex: 1, textAlign: 'center', p: 2, backgroundColor: 'rgba(76, 175, 80, 0.1)', borderRadius: '12px' }}>
-                                            <Typography variant="h4" sx={{ color: '#4caf50', fontWeight: 700 }}>
-                                                {unlockedAchievements}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: '#c7d5e0' }}>
-                                                Desbloqueadas
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ flex: 1, textAlign: 'center', p: 2, backgroundColor: 'rgba(255, 152, 0, 0.1)', borderRadius: '12px' }}>
-                                            <Typography variant="h4" sx={{ color: '#ff9800', fontWeight: 700 }}>
-                                                {remainingAchievements}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: '#c7d5e0' }}>
-                                                Restantes
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ flex: 1, textAlign: 'center', p: 2, backgroundColor: 'rgba(102, 192, 244, 0.1)', borderRadius: '12px' }}>
-                                            <Typography variant="h4" sx={{ color: '#66c0f4', fontWeight: 700 }}>
-                                                {totalAchievements}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: '#c7d5e0' }}>
-                                                Total
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </>
-                            ) : (
-                                <Box sx={{ textAlign: 'center', py: 4 }}>
-                                    <Typography variant="h6" sx={{ color: '#c7d5e0', mb: 1 }}>
-                                        📊 Dados de conquistas não disponíveis
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: '#c7d5e0', opacity: 0.7 }}>
-                                        Este jogo pode não ter conquistas ou os dados ainda não foram carregados
+                                        </Stack>
+                                    </Stack>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={Math.min(progressPercentage, 100)}
+                                        sx={{
+                                            height: 12,
+                                            borderRadius: 6,
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                            '& .MuiLinearProgress-bar': {
+                                                background: `linear-gradient(90deg, ${progressStatus.color} 0%, ${progressStatus.color}dd 100%)`,
+                                                borderRadius: 6,
+                                            },
+                                        }}
+                                    />
+                                    <Typography variant="body2" sx={{ color: '#a0aec0', mt: 1 }}>
+                                        {progressPercentage.toFixed(1)}% completo
+                                        {estimatedHours > 0 && ` (estimativa: ~${estimatedHours}h para completar)`}
                                     </Typography>
                                 </Box>
-                            )}
+
+                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                                    <Paper sx={{
+                                        flex: 1,
+                                        p: 3,
+                                        background: 'rgba(102, 126, 234, 0.1)',
+                                        border: '1px solid rgba(102, 126, 234, 0.2)',
+                                        borderRadius: '16px',
+                                        textAlign: 'center',
+                                    }}>
+                                        <Typography variant="h4" sx={{ color: '#667eea', fontWeight: 800, mb: 1 }}>
+                                            {playtimeHours.toFixed(1)}h
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: '#a0aec0', fontWeight: 500 }}>
+                                            Tempo jogado
+                                        </Typography>
+                                    </Paper>
+                                    <Paper sx={{
+                                        flex: 1,
+                                        p: 3,
+                                        background: 'rgba(118, 75, 162, 0.1)',
+                                        border: '1px solid rgba(118, 75, 162, 0.2)',
+                                        borderRadius: '16px',
+                                        textAlign: 'center',
+                                    }}>
+                                        <Typography variant="h6" sx={{ color: '#764ba2', fontWeight: 800, mb: 1, fontSize: '1.5rem' }}>
+                                            {getLastPlayedText()}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: '#a0aec0', fontWeight: 500 }}>
+                                            Último jogo
+                                        </Typography>
+                                    </Paper>
+                                </Stack>
+                            </Stack>
                         </CardContent>
                     </Card>
                 </Box>
 
-                {/* Análise Gamer */}
-                {gameAnalysis.length > 0 && (
-                    <Box sx={{ mt: 3 }}>
-                        <Card sx={{ backgroundColor: '#2a475e', border: '1px solid #66c0f4' }}>
-                            <CardContent>
-                                <Typography variant="h6" sx={{ mb: 2, color: '#66c0f4', fontWeight: 600 }}>
-                                    🎮 Análise Gamer
+                {/* Achievements Section */}
+                <Box sx={{ px: 4, pb: 2 }}>
+                    <Card sx={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '20px',
+                        backdropFilter: 'blur(10px)',
+                    }}>
+                        <CardContent sx={{ p: 4 }}>
+                            <Stack spacing={3}>
+                                <Typography variant="h5" sx={{ color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <EmojiEvents sx={{ fontSize: '1.8rem', color: '#ed8936' }} />
+                                    Conquistas
                                 </Typography>
 
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                    {gameAnalysis.map((analysis, index) => (
-                                        <Box key={index} sx={{
-                                            p: 2,
-                                            backgroundColor: 'rgba(102, 192, 244, 0.1)',
-                                            borderRadius: '8px',
-                                            border: `1px solid ${analysis.color}`,
-                                        }}>
-                                            <Typography variant="h6" sx={{ color: analysis.color, mb: 1 }}>
-                                                {analysis.icon} {analysis.title}
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: '#c7d5e0' }}>
-                                                {analysis.description}
-                                            </Typography>
+                                {totalAchievements > 0 ? (
+                                    <>
+                                        <Box>
+                                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                                                <Typography variant="body1" sx={{ color: '#a0aec0' }}>
+                                                    {unlockedAchievements} de {totalAchievements} conquistas
+                                                </Typography>
+                                                <Typography variant="body1" sx={{ color: '#48bb78', fontWeight: 600 }}>
+                                                    {Math.round((unlockedAchievements / totalAchievements) * 100)}% completo
+                                                </Typography>
+                                            </Stack>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={(unlockedAchievements / totalAchievements) * 100}
+                                                sx={{
+                                                    height: 12,
+                                                    borderRadius: 6,
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                                    '& .MuiLinearProgress-bar': {
+                                                        background: 'linear-gradient(90deg, #48bb78 0%, #38a169 100%)',
+                                                        borderRadius: 6,
+                                                    },
+                                                }}
+                                            />
                                         </Box>
-                                    ))}
-                                </Box>
+
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                                            <Paper sx={{
+                                                flex: 1,
+                                                p: 3,
+                                                background: 'rgba(72, 187, 120, 0.1)',
+                                                border: '1px solid rgba(72, 187, 120, 0.2)',
+                                                borderRadius: '16px',
+                                                textAlign: 'center',
+                                            }}>
+                                                <Typography variant="h4" sx={{ color: '#48bb78', fontWeight: 800, mb: 1 }}>
+                                                    {unlockedAchievements}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: '#a0aec0', fontWeight: 500 }}>
+                                                    Desbloqueadas
+                                                </Typography>
+                                            </Paper>
+                                            <Paper sx={{
+                                                flex: 1,
+                                                p: 3,
+                                                background: 'rgba(237, 137, 54, 0.1)',
+                                                border: '1px solid rgba(237, 137, 54, 0.2)',
+                                                borderRadius: '16px',
+                                                textAlign: 'center',
+                                            }}>
+                                                <Typography variant="h4" sx={{ color: '#ed8936', fontWeight: 800, mb: 1 }}>
+                                                    {remainingAchievements}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: '#a0aec0', fontWeight: 500 }}>
+                                                    Restantes
+                                                </Typography>
+                                            </Paper>
+                                            <Paper sx={{
+                                                flex: 1,
+                                                p: 3,
+                                                background: 'rgba(102, 126, 234, 0.1)',
+                                                border: '1px solid rgba(102, 126, 234, 0.2)',
+                                                borderRadius: '16px',
+                                                textAlign: 'center',
+                                            }}>
+                                                <Typography variant="h4" sx={{ color: '#667eea', fontWeight: 800, mb: 1 }}>
+                                                    {totalAchievements}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ color: '#a0aec0', fontWeight: 500 }}>
+                                                    Total
+                                                </Typography>
+                                            </Paper>
+                                        </Stack>
+                                    </>
+                                ) : (
+                                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                                        <Typography variant="h6" sx={{ color: '#a0aec0', mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                            <EmojiEvents sx={{ fontSize: '1.5rem' }} />
+                                            Dados de conquistas não disponíveis
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: '#a0aec0', opacity: 0.7 }}>
+                                            Este jogo pode não ter conquistas ou os dados ainda não foram carregados
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Stack>
+                        </CardContent>
+                    </Card>
+                </Box>
+
+                {/* Game Analysis */}
+                {gameAnalysis.length > 0 && (
+                    <Box sx={{ px: 4, pb: 2 }}>
+                        <Card sx={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '20px',
+                            backdropFilter: 'blur(10px)',
+                        }}>
+                            <CardContent sx={{ p: 4 }}>
+                                <Stack spacing={3}>
+                                    <Typography variant="h5" sx={{ color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Psychology sx={{ fontSize: '1.8rem', color: '#9f7aea' }} />
+                                        Análise Gamer
+                                    </Typography>
+
+                                    <Stack spacing={2}>
+                                        {gameAnalysis.map((analysis, index) => (
+                                            <Paper key={index} sx={{
+                                                p: 3,
+                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                border: `1px solid ${analysis.color}40`,
+                                                borderRadius: '16px',
+                                                '&:hover': {
+                                                    background: 'rgba(255, 255, 255, 0.08)',
+                                                    transform: 'translateY(-2px)',
+                                                },
+                                                transition: 'all 0.2s ease-in-out',
+                                            }}>
+                                                <Stack direction="row" spacing={2} alignItems="flex-start">
+                                                    <Typography variant="h4" sx={{ fontSize: '1.5rem' }}>
+                                                        {analysis.icon}
+                                                    </Typography>
+                                                    <Box>
+                                                        <Typography variant="h6" sx={{ color: analysis.color, mb: 1, fontWeight: 600 }}>
+                                                            {analysis.title}
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ color: '#a0aec0', lineHeight: 1.6 }}>
+                                                            {analysis.description}
+                                                        </Typography>
+                                                    </Box>
+                                                </Stack>
+                                            </Paper>
+                                        ))}
+                                    </Stack>
+                                </Stack>
                             </CardContent>
                         </Card>
                     </Box>
                 )}
 
-                {/* Razões da Recomendação */}
+                {/* Recommendation Reasons */}
                 {game.reasons && game.reasons.length > 0 && (
-                    <Box sx={{ mt: 3 }}>
-                        <Card sx={{ backgroundColor: '#2a475e', border: '1px solid #66c0f4' }}>
-                            <CardContent>
-                                <Typography variant="h6" sx={{ mb: 2, color: '#66c0f4', fontWeight: 600 }}>
-                                    💡 Por que recomendamos
-                                </Typography>
+                    <Box sx={{ px: 4, pb: 2 }}>
+                        <Card sx={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '20px',
+                            backdropFilter: 'blur(10px)',
+                        }}>
+                            <CardContent sx={{ p: 4 }}>
+                                <Stack spacing={3}>
+                                    <Typography variant="h5" sx={{ color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Lightbulb sx={{ fontSize: '1.8rem', color: '#ed8936' }} />
+                                        Por que recomendamos
+                                    </Typography>
 
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                    {game.reasons.map((reason, index) => (
-                                        <Chip
-                                            key={index}
-                                            label={reason}
-                                            variant="outlined"
-                                            sx={{
-                                                borderColor: '#66c0f4',
-                                                color: '#66c0f4',
-                                                '&:hover': {
-                                                    backgroundColor: 'rgba(102, 192, 244, 0.1)',
-                                                },
-                                            }}
-                                        />
-                                    ))}
-                                </Box>
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                        {game.reasons.map((reason, index) => (
+                                            <Chip
+                                                key={index}
+                                                label={reason}
+                                                sx={{
+                                                    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                                                    color: '#667eea',
+                                                    border: '1px solid rgba(102, 126, 234, 0.3)',
+                                                    fontWeight: 500,
+                                                    px: 2,
+                                                    py: 1,
+                                                    '&:hover': {
+                                                        backgroundColor: 'rgba(102, 126, 234, 0.3)',
+                                                        transform: 'translateY(-1px)',
+                                                    },
+                                                    transition: 'all 0.2s ease-in-out',
+                                                }}
+                                            />
+                                        ))}
+                                    </Stack>
+                                </Stack>
                             </CardContent>
                         </Card>
                     </Box>
                 )}
             </DialogContent>
 
+            {/* Footer Actions */}
             <DialogActions sx={{
                 p: 4,
-                borderTop: '1px solid rgba(102, 192, 244, 0.2)',
-                background: 'linear-gradient(90deg, transparent 0%, rgba(102, 192, 244, 0.05) 100%)',
-                gap: 2,
+                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%)',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             }}>
-                <Button
-                    onClick={onClose}
-                    variant="outlined"
-                    sx={{
-                        borderColor: 'rgba(199, 213, 224, 0.3)',
-                        color: '#c7d5e0',
-                        px: 4,
-                        py: 1.5,
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        '&:hover': {
-                            backgroundColor: 'rgba(199, 213, 224, 0.1)',
-                            borderColor: '#c7d5e0',
+                <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+                    <Button
+                        onClick={onClose}
+                        variant="outlined"
+                        sx={{
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            color: '#a0aec0',
+                            px: 4,
+                            py: 2,
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            fontSize: '1rem',
+                            '&:hover': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                borderColor: '#ffffff',
+                                color: '#ffffff',
+                            },
+                            transition: 'all 0.2s ease-in-out',
+                        }}
+                    >
+                        Fechar
+                    </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<PlayArrow />}
+                        onClick={() => window.open(`https://store.steampowered.com/app/${game.id}`, '_blank')}
+                        sx={{
+                            flex: 1,
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                             color: '#ffffff',
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                    }}
-                >
-                    Fechar
-                </Button>
-                <Button
-                    variant="contained"
-                    startIcon={<PlayArrow />}
-                    onClick={() => window.open(`https://store.steampowered.com/app/${game.id}`, '_blank')}
-                    sx={{
-                        backgroundColor: '#66c0f4',
-                        color: '#1b2838',
-                        fontWeight: 700,
-                        px: 4,
-                        py: 1.5,
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        boxShadow: '0 4px 12px rgba(102, 192, 244, 0.3)',
-                        '&:hover': {
-                            backgroundColor: '#8ed8ff',
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 6px 16px rgba(102, 192, 244, 0.4)',
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                    }}
-                >
-                    Jogar no Steam
-                </Button>
+                            fontWeight: 700,
+                            px: 4,
+                            py: 2,
+                            borderRadius: '12px',
+                            textTransform: 'none',
+                            fontSize: '1rem',
+                            boxShadow: '0 8px 20px rgba(102, 126, 234, 0.4)',
+                            '&:hover': {
+                                background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 12px 25px rgba(102, 126, 234, 0.5)',
+                            },
+                            transition: 'all 0.2s ease-in-out',
+                        }}
+                    >
+                        Jogar no Steam
+                    </Button>
+                </Stack>
             </DialogActions>
-        </Dialog >
+        </Dialog>
     );
 };

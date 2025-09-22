@@ -27,8 +27,8 @@ public class RecommendationService
     {
         var recommendations = new List<RecommendationItem>();
 
-        _logger.LogInformation("🚀 Starting recommendation process for SteamId64: {SteamId64} with {VibeCount} vibes",
-            request.SteamId64, request.Vibe?.Length ?? 0);
+        _logger.LogInformation("🚀 Starting recommendation process for SteamId64: {SteamId64} with vibe: {Vibe}",
+            request.SteamId64, request.Vibe);
 
         try
         {
@@ -235,10 +235,10 @@ public class RecommendationService
         }
 
         // 5. VIBE-SPECIFIC REASONS (baseado nos filtros do usuário)
-        if (request.Vibe != null && request.Vibe.Length > 0)
+        if (!string.IsNullOrEmpty(request.Vibe))
         {
             var gameGenres = game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-            var vibeGenres = MapVibeToGenres(request.Vibe);
+            var vibeGenres = MapVibeToGenres(new[] { request.Vibe });
 
             var matchingGenres = gameGenres.Where(genre =>
                 vibeGenres.Any(vg => vg.Contains(genre, StringComparison.OrdinalIgnoreCase) ||
@@ -247,7 +247,7 @@ public class RecommendationService
 
             if (matchingGenres.Any())
             {
-                reasons.Add($"Perfeito para: {string.Join(", ", request.Vibe.Take(2))}");
+                reasons.Add($"Perfeito para: {request.Vibe}");
             }
         }
 
@@ -507,9 +507,9 @@ public class RecommendationService
         }
 
         // 4. VIBE-MATCH SCORE (15% do score)
-        if (request.Vibe != null && request.Vibe.Length > 0)
+        if (!string.IsNullOrEmpty(request.Vibe))
         {
-            var vibeScore = CalculateVibeMatch(game, request.Vibe) * 0.15f;
+            var vibeScore = CalculateVibeMatch(game, new[] { request.Vibe }) * 0.15f;
             score += vibeScore;
         }
 

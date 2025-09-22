@@ -42,16 +42,39 @@ export const apiClient = {
         }
     },
 
-    recommend: async (page: number = 1, limit: number = 10) => {
-        console.log('🎯 Getting recommendations:', { page, limit });
+    recommend: async (payload: RecommendationPayload) => {
+        console.log('🔍 Sending recommendation request to backend:', payload);
 
-        try {
-            const response = await http.get(`/api/recommendations?page=${page}&limit=${limit}`);
-            return RecommendResponseSchema.parse(response.data);
-        } catch (error) {
-            console.error('❌ Error getting recommendations:', error);
-            throw error;
-        }
+        const response = await http.post('/api/recommendations', payload);
+        const backendData = response.data;
+
+        console.log('🔍 Backend Data:', backendData);
+
+        const frontendData = {
+            games: backendData.items.map((item: any) => ({
+                id: item.appId.toString(),
+                name: item.name,
+                coverImage: `https://cdn.akamai.steamstatic.com/steam/apps/${item.appId}/header.jpg`,
+                rating: item.scoreTotal,
+                hoursPlayed: item.playtimeForever ? item.playtimeForever / 60 : 0, // Converter minutos para horas
+                lastPlayed: item.lastPlayed || null,
+                metaScore: item.scores?.metacritic || null,
+                openCriticScore: item.scores?.openCritic || null,
+                steamScore: item.scores?.steamPosPct || null,
+                hltbMain: item.hltb?.mainHours || null,
+                reasons: item.why,
+                // Campos de conquistas (quando disponíveis)
+                achievementsTotal: item.achievementsTotal || null,
+                achievementsUnlocked: item.achievementsUnlocked || null,
+                // Gêneros (quando disponíveis)
+                genres: item.genres || [],
+            })),
+            total: backendData.items.length,
+        };
+
+        console.log('🎮 Frontend Data:', frontendData);
+
+        return RecommendResponseSchema.parse(frontendData);
     },
 
     feedback: async (feedback: Feedback) => {
@@ -152,5 +175,17 @@ export const apiClient = {
         console.log('🎮 Discover Frontend Data:', frontendData);
 
         return RecommendResponseSchema.parse(frontendData);
+    },
+
+    getGameReviews: async (appId: number) => {
+        console.log('📝 Fetching reviews for app:', appId);
+
+        try {
+            const response = await http.get(`/api/games/${appId}/reviews`);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Error fetching game reviews:', error);
+            throw error;
+        }
     },
 };
