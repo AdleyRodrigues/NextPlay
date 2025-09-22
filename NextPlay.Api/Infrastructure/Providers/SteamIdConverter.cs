@@ -31,7 +31,7 @@ public static class SteamIdConverter
 
                 // Fórmula para converter Steam ID para Steam ID64
                 var steamId64 = (z * 2) + y + 76561197960265728L;
-                
+
                 return steamId64.ToString();
             }
             catch
@@ -47,10 +47,10 @@ public static class SteamIdConverter
             {
                 var id3 = steamId.Substring(5, steamId.Length - 6); // Remove [U:1: e ]
                 var z = int.Parse(id3);
-                
+
                 // Fórmula para converter Steam ID3 para Steam ID64
                 var steamId64 = z + 76561197960265728L;
-                
+
                 return steamId64.ToString();
             }
             catch
