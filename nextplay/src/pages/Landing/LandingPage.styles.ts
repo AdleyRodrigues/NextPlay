@@ -143,6 +143,10 @@ export const generateButton: SxProps<Theme> = {
     transition: 'background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease',
 };
 
+export const recommendationsSection: SxProps<Theme> = {
+    scrollMarginTop: { xs: '72px', md: '80px' },
+};
+
 export const recommendationsTitle: SxProps<Theme> = {
     color: '#ffffff',
     fontWeight: 700,

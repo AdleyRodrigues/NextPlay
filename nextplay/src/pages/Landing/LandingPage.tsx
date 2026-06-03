@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -35,6 +35,20 @@ export const LandingPage = () => {
     const [recommendations, setRecommendations] = useState<Game[]>([]);
     const [showRecommendations, setShowRecommendations] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const recommendationsRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isLoading) return;
+
+        const timer = window.setTimeout(() => {
+            recommendationsRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }, 150);
+
+        return () => window.clearTimeout(timer);
+    }, [isLoading]);
 
     const handleGetRecommendations = async () => {
         if (!isValid) {
@@ -184,7 +198,7 @@ export const LandingPage = () => {
                 {/* Recommendations Section */}
                 {(isLoading || showRecommendations) && (
                     <Fade in timeout={600}>
-                        <Box>
+                        <Box ref={recommendationsRef} sx={S.recommendationsSection}>
                             <Typography variant="h4" sx={S.recommendationsTitle}>
                                 <AutoAwesome sx={S.getAiSparkleIconStyle(isLoading)} />
                                 {isLoading ? 'Montando seu plano de treino...' : 'Jogos Recomendados'}
