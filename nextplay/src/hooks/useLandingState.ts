@@ -8,7 +8,7 @@ export interface LandingFilters {
     minYear?: number;
     maxYear?: number;
     vibes?: string[];
-    isMultiplayer?: boolean;
+    multiplayerMode?: string;
 }
 
 export interface RecommendationPayload {
@@ -19,7 +19,7 @@ export interface RecommendationPayload {
     minYear?: number;
     maxYear?: number;
     vibes?: string[];
-    isMultiplayer?: boolean;
+    multiplayerMode?: string;
 }
 
 export const useLandingState = () => {
@@ -35,7 +35,30 @@ export const useLandingState = () => {
         key: K,
         value: LandingFilters[K]
     ) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
+        setFilters(prev => {
+            const next = { ...prev, [key]: value };
+
+            const hasCompetitiveVibe = next.vibes?.includes('competitivo');
+            const hasCoopSkill = next.skill === 'cooperacao';
+
+            // Se o usuário tentar forçar Single Player, limpamos as opções incompatíveis
+            if (next.multiplayerMode === 'single') {
+                if (hasCompetitiveVibe) {
+                    next.vibes = next.vibes?.filter(v => v !== 'competitivo');
+                }
+                if (hasCoopSkill) {
+                    next.skill = undefined;
+                }
+            } 
+            // Se o usuário marcar Competitivo ou Coop, não deixamos ficar em Single Player
+            else if (hasCompetitiveVibe || hasCoopSkill) {
+                if (next.multiplayerMode === 'single' || !next.multiplayerMode) {
+                    next.multiplayerMode = 'both';
+                }
+            }
+
+            return next;
+        });
     };
 
     const isValid = useMemo(() => {
@@ -51,7 +74,7 @@ export const useLandingState = () => {
             minYear: filters.minYear,
             maxYear: filters.maxYear,
             vibes: filters.vibes,
-            isMultiplayer: filters.isMultiplayer,
+            multiplayerMode: filters.multiplayerMode || 'both',
         };
     };
 

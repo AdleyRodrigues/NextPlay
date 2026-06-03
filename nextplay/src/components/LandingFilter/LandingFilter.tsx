@@ -6,8 +6,6 @@ import {
     Stack,
     Tooltip,
     Slider,
-    Switch,
-    FormControlLabel,
     Paper,
     Divider,
 } from '@mui/material';
@@ -184,20 +182,20 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                         <Typography variant="h6" sx={S.sectionTitle}>
                             <People sx={{ color: '#4299e1' }} /> Experiência
                         </Typography>
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={filters.isMultiplayer || false}
-                                    onChange={(e) => onFilterChange('isMultiplayer', e.target.checked ? true : undefined)}
-                                    color="primary"
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            {[
+                                { value: 'single', label: 'Só Single Player', icon: '👤' },
+                                { value: 'multi', label: 'Só Multiplayer', icon: '🌐' },
+                                { value: 'both', label: 'Ambos', icon: '👥' },
+                            ].map((mode) => (
+                                <Chip
+                                    key={mode.value}
+                                    label={`${mode.icon} ${mode.label}`}
+                                    onClick={() => onFilterChange('multiplayerMode', mode.value)}
+                                    sx={S.getTimeChipStyle((filters.multiplayerMode || 'both') === mode.value)}
                                 />
-                            }
-                            label={
-                                <Typography sx={{ color: filters.isMultiplayer ? '#ffffff' : '#a0aec0', fontWeight: 500 }}>
-                                    {filters.isMultiplayer ? "🌐 Focado em Multiplayer" : "👤 Mostrar todos (Single/Multi)"}
-                                </Typography>
-                            }
-                        />
+                            ))}
+                        </Stack>
                     </Box>
 
                     <Box sx={S.durationSection}>

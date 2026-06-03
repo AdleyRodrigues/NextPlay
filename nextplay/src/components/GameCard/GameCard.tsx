@@ -9,6 +9,7 @@ import {
     Chip,
     Stack,
     Fade,
+    Tooltip,
 } from '@mui/material';
 import {
     Visibility,
@@ -89,11 +90,22 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                     {/* Scores */}
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                         {game.metaScore && (
-                            <Chip
-                                label={`Meta: ${game.metaScore}`}
-                                size="small"
-                                sx={S.getMetaScoreChip(getScoreColor(game.metaScore))}
-                            />
+                            <Tooltip title="Nota da Crítica Especializada (Metacritic)" arrow placement="top">
+                                <Chip
+                                    label={`Metacritic: ${game.metaScore}`}
+                                    size="small"
+                                    sx={S.getMetaScoreChip(getScoreColor(game.metaScore))}
+                                />
+                            </Tooltip>
+                        )}
+                        {game.criticRating && (
+                            <Tooltip title="Avaliação Geral (Jogadores e Crítica)" arrow placement="top">
+                                <Chip
+                                    label={`Avaliação: ${game.criticRating.toFixed(1)}/5`}
+                                    size="small"
+                                    sx={S.getMetaScoreChip('#4299e1')}
+                                />
+                            </Tooltip>
                         )}
 
                     </Stack>

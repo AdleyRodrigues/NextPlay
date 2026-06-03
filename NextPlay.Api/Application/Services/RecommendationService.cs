@@ -51,14 +51,33 @@ public class RecommendationService
 
             if (rawgGames == null || rawgGames.Count == 0)
             {
-                _logger.LogWarning("⚠️ No games found for Platform: {PlatformId} and Skill: {Skill}", request.PlatformId, request.Skill);
-                return new RecommendationsResponse
+                _logger.LogWarning("⚠️ No games found for Platform: {PlatformId} and Skill: {Skill} with full filters. Attempting fallback...", request.PlatformId, request.Skill);
+                
+                var fallbackRequest = new RecommendRequest
                 {
-                    SteamId64 = "anonymous",
-                    Items = new List<RecommendationItem>(),
-                    TotalCount = 0,
-                    GeneratedAt = DateTime.UtcNow
+                    PlatformId = request.PlatformId,
+                    Skill = request.Skill,
+                    Time = request.Time,
+                    Limit = request.Limit,
+                    MinYear = request.MinYear,
+                    MaxYear = request.MaxYear,
+                    Vibes = new List<string>(), // Remove Vibes
+                    MultiplayerMode = null // Remove Multiplayer constraint
                 };
+
+                rawgGames = await _rawgService.GetGamesByTagsAsync(tagsStr, genresStr, request.Limit * 2, fallbackRequest, CancellationToken.None);
+
+                if (rawgGames == null || rawgGames.Count == 0)
+                {
+                    _logger.LogWarning("⚠️ Fallback also returned no games.");
+                    return new RecommendationsResponse
+                    {
+                        SteamId64 = "anonymous",
+                        Items = new List<RecommendationItem>(),
+                        TotalCount = 0,
+                        GeneratedAt = DateTime.UtcNow
+                    };
+                }
             }
 
             // 3. Processar e transformar em recomendações
@@ -142,10 +161,22 @@ public class RecommendationService
     {
         try
         {
+            var gameTags = dto.tags?.Select(t => t.slug ?? t.name?.ToLowerInvariant() ?? "").ToList() ?? new List<string>();
+
+            // Filtro estrito de modo de jogo
+            if (request.MultiplayerMode == "multi" && gameTags.Contains("singleplayer"))
+            {
+                return null;
+            }
+            if (request.MultiplayerMode == "single" && gameTags.Contains("multiplayer"))
+            {
+                return null;
+            }
             var finalScores = new ScoresDto
             {
                 Metacritic = dto.metacritic ?? game.Scores?.Metacritic,
-                OpenCritic = game.Scores?.OpenCritic
+                OpenCritic = game.Scores?.OpenCritic,
+                GeneralRating = dto.rating
             };
 
             var score = CalculateSkillScore(game, dto, finalScores, request, targetTags);
@@ -265,7 +296,7 @@ public class RecommendationService
         {
             "logica" => (new[] { "puzzle" }, new[] { "logic" }),
             "reflexos" => (new[] { "shooter" }, new[] { "fast-paced" }),
-            "resiliencia" => (new[] { "action" }, new[] { "difficult" }),
+            "resiliencia" => (new[] { "action" }, new[] { "souls-like" }),
             "estrategia" => (new[] { "strategy" }, new[] { "turn-based" }),
             "cooperacao" => (new[] { "action" }, new[] { "co-op" }),
             "criatividade" => (new[] { "simulation" }, new[] { "sandbox" }),

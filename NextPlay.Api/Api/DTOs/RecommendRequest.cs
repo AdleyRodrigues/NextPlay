@@ -9,5 +9,5 @@ public class RecommendRequest
     public int? MinYear { get; set; }
     public int? MaxYear { get; set; }
     public List<string>? Vibes { get; set; }
-    public bool? IsMultiplayer { get; set; }
+    public string? MultiplayerMode { get; set; } // "single", "multi", "both"
 }

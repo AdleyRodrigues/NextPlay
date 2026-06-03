@@ -301,10 +301,11 @@ public sealed class RawgService : IRawgService
                 allTags.AddRange(vibeTags);
             }
 
-            if (request.IsMultiplayer.HasValue)
+            if (!string.IsNullOrWhiteSpace(request.MultiplayerMode))
             {
-                if (request.IsMultiplayer.Value) allTags.Add("multiplayer"); // Removido co-op para não obrigar que seja ambos
-                else allTags.Add("singleplayer");
+                if (request.MultiplayerMode == "multi") allTags.Add("multiplayer");
+                else if (request.MultiplayerMode == "single") allTags.Add("singleplayer");
+                // "both" doesn't add any exclusive tag
             }
             
             if (allTags.Any())

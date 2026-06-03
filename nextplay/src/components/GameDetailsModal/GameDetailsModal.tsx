@@ -13,6 +13,7 @@ import {
     IconButton,
     Stack,
     Paper,
+    Tooltip,
 } from '@mui/material';
 import {
     Close,
@@ -137,16 +138,28 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                                 <Box>
                                     <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                                         {game.metaScore && (
-                                            <Chip
-                                                label={`Meta: ${game.metaScore}`}
-                                                sx={S.getScoreChip(getScoreColor(game.metaScore))}
-                                            />
+                                            <Tooltip title="Nota da Crítica Especializada (Metacritic)" arrow placement="top">
+                                                <Chip
+                                                    label={`Metacritic: ${game.metaScore}`}
+                                                    sx={S.getScoreChip(getScoreColor(game.metaScore))}
+                                                />
+                                            </Tooltip>
                                         )}
                                         {game.openCriticScore && (
-                                            <Chip
-                                                label={`OC: ${game.openCriticScore}`}
-                                                sx={S.getScoreChip(getScoreColor(game.openCriticScore))}
-                                            />
+                                            <Tooltip title="Nota no OpenCritic" arrow placement="top">
+                                                <Chip
+                                                    label={`OpenCritic: ${game.openCriticScore}`}
+                                                    sx={S.getScoreChip(getScoreColor(game.openCriticScore))}
+                                                />
+                                            </Tooltip>
+                                        )}
+                                        {game.criticRating && (
+                                            <Tooltip title="Avaliação Geral (Jogadores e Crítica)" arrow placement="top">
+                                                <Chip
+                                                    label={`Avaliação: ${game.criticRating.toFixed(1)}/5`}
+                                                    sx={S.getScoreChip('#4299e1')}
+                                                />
+                                            </Tooltip>
                                         )}
                                     </Stack>
                                 </Box>

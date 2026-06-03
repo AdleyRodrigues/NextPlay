@@ -144,9 +144,9 @@ export const LandingPage = () => {
                                                     sx={S.yearChip}
                                                 />
                                             )}
-                                            {filters.isMultiplayer && (
+                                            {filters.multiplayerMode && filters.multiplayerMode !== 'both' && (
                                                 <Chip
-                                                    label="Multiplayer"
+                                                    label={filters.multiplayerMode === 'single' ? "Só Single Player" : "Só Multiplayer"}
                                                     icon={<People sx={{ fontSize: '1.2rem' }} />}
                                                     sx={S.multiplayerChip}
                                                 />
