@@ -14,6 +14,8 @@ import {
     Stack,
     Paper,
     Tooltip,
+    useTheme,
+    useMediaQuery,
 } from '@mui/material';
 import {
     Close,
@@ -35,6 +37,9 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
     onClose,
     game,
 }) => {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
     if (!game) return null;
 
     const estimatedHours = game.hltbMain || EstimatePlaytimeFromGenres(game.genres || []);
@@ -91,12 +96,19 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
             onClose={onClose}
             maxWidth="md"
             fullWidth
-            PaperProps={{ sx: S.dialogPaper }}
-            BackdropProps={{ sx: S.dialogBackdrop }}
+            fullScreen={isMobile}
+            PaperProps={{
+                sx: S.dialogPaper
+            }}
+            slotProps={{
+                backdrop: {
+                    sx: S.dialogBackdrop
+                }
+            }}
         >
             <DialogTitle sx={S.dialogTitle}>
                 <Box sx={S.titleBox}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                    <Stack direction="row" justifyContent="space-between" alignItems={{ xs: 'center', md: 'flex-start' }}>
                         <Box sx={{ flex: 1 }}>
                             <Typography variant="h3" sx={S.titleText}>
                                 {game.name}
@@ -136,7 +148,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                         <Box sx={{ flex: 1 }}>
                             <Stack spacing={3}>
                                 <Box>
-                                    <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+                                    <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap justifyContent={{ xs: 'center', md: 'flex-start' }}>
                                         {game.metaScore && (
                                             <Tooltip title="Nota da Crítica Especializada (Metacritic)" arrow placement="top">
                                                 <Chip
@@ -169,9 +181,9 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                                         <Typography variant="h6" sx={S.sectionTitle}>
                                             Duração
                                         </Typography>
-                                        <Stack direction="row" spacing={2} alignItems="center">
+                                        <Stack direction="row" spacing={2} alignItems="center" justifyContent={{ xs: 'center', md: 'flex-start' }}>
                                             <AccessTime sx={S.accessTimeIcon} />
-                                            <Box>
+                                            <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
                                                 <Typography variant="body1" sx={S.durationText}>
                                                     ~{estimatedHours}h para completar
                                                 </Typography>
@@ -190,7 +202,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                                         <Typography variant="h6" sx={S.sectionTitle}>
                                             Gêneros
                                         </Typography>
-                                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent={{ xs: 'center', md: 'flex-start' }}>
                                             {game.genres.map((genre, index) => (
                                                 <Chip
                                                     key={index}
@@ -217,7 +229,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                                         Por que recomendamos
                                     </Typography>
 
-                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap justifyContent={{ xs: 'center', md: 'flex-start' }}>
                                         {game.reasons.map((reason, index) => (
                                             <Chip
                                                 key={index}

@@ -87,7 +87,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                     <Typography variant="h6" sx={S.sectionTitle}>
                         <VideogameAsset sx={{ color: '#667eea' }} /> Onde você joga?
                     </Typography>
-                    <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+                    <Box sx={S.chipsWrap}>
                         {platformOptions.map((option) => (
                             <Tooltip key={option.value} title={option.tooltip} arrow placement="top">
                                 <Chip
@@ -97,7 +97,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                 />
                             </Tooltip>
                         ))}
-                    </Stack>
+                    </Box>
                 </Box>
 
                 {/* 2. Skills */}
@@ -105,7 +105,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                     <Typography variant="h6" sx={S.sectionTitle}>
                         <Psychology sx={{ color: '#ff77c6' }} /> O que quer desenvolver?
                     </Typography>
-                    <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+                    <Box sx={S.chipsWrap}>
                         {skillOptions.map((option) => (
                             <Tooltip key={option.value} title={option.tooltip} arrow placement="top">
                                 <Chip
@@ -115,7 +115,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                 />
                             </Tooltip>
                         ))}
-                    </Stack>
+                    </Box>
 
                     {/* Psychological Benefit Box */}
                     {filters.skill && (
@@ -137,12 +137,12 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
 
                 <Divider sx={S.divider} />
 
-                {/* 3. Vibes (New) */}
+                {/* 3. Vibes */}
                 <Box>
                     <Typography variant="h6" sx={S.sectionTitle}>
                         <Mood sx={{ color: '#48bb78' }} /> Qual a sua Vibe de hoje?
                     </Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    <Box sx={S.chipsWrap}>
                         {vibeOptions.map((option) => (
                             <Tooltip key={option.value} title={option.tooltip} arrow placement="top">
                                 <Chip
@@ -152,10 +152,10 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                 />
                             </Tooltip>
                         ))}
-                    </Stack>
+                    </Box>
                 </Box>
 
-                {/* 4. Release Year Slider (New) */}
+                {/* 4. Release Year Slider */}
                 <Box>
                     <Typography variant="h6" sx={S.yearSectionTitle}>
                         <DateRange sx={{ color: '#ed8936' }} /> Era do Jogo
@@ -182,7 +182,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                         <Typography variant="h6" sx={S.sectionTitle}>
                             <People sx={{ color: '#4299e1' }} /> Experiência
                         </Typography>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        <Box sx={S.chipsWrap}>
                             {[
                                 { value: 'single', label: 'Só Single Player', icon: '👤' },
                                 { value: 'multi', label: 'Só Multiplayer', icon: '🌐' },
@@ -195,14 +195,14 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                     sx={S.getTimeChipStyle((filters.multiplayerMode || 'both') === mode.value)}
                                 />
                             ))}
-                        </Stack>
+                        </Box>
                     </Box>
 
                     <Box sx={S.durationSection}>
                         <Typography variant="h6" sx={S.sectionTitle}>
                             <AccessTime sx={{ color: '#9f7aea' }} /> Duração (Tempo para zerar)
                         </Typography>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        <Box sx={S.chipsWrap}>
                             {['Curto', 'Médio', 'Longo'].map((timeStr) => (
                                 <Chip
                                     key={timeStr}
@@ -211,7 +211,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                     sx={S.getTimeChipStyle(filters.time?.includes(timeStr.toLowerCase()) ?? false)}
                                 />
                             ))}
-                        </Stack>
+                        </Box>
                     </Box>
                 </Stack>
 

@@ -39,7 +39,7 @@ export const heroTitle: SxProps<Theme> = {
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     mb: 2,
-    fontSize: { xs: '2.5rem', md: '3.5rem' },
+    fontSize: { xs: '2rem', md: '3.5rem' },
     lineHeight: 1.2,
 };
 
@@ -61,7 +61,7 @@ export const filtersCard: SxProps<Theme> = {
 };
 
 export const filtersCardContent: SxProps<Theme> = {
-    p: 4
+    p: { xs: 2.5, md: 4 }
 };
 
 export const selectedFiltersContainer: SxProps<Theme> = {
@@ -114,17 +114,19 @@ export const vibeChip: SxProps<Theme> = {
 
 export const generateButtonContainer: SxProps<Theme> = {
     textAlign: 'center',
-    mb: 4
+    mb: 4,
+    px: { xs: 2, md: 0 }
 };
 
 export const generateButton: SxProps<Theme> = {
-    px: 6,
-    py: 3,
+    px: { xs: 2, md: 6 },
+    py: { xs: 2, md: 3 },
+    width: { xs: '100%', md: 'auto' },
     borderRadius: '16px',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: '#ffffff',
     fontWeight: 800,
-    fontSize: '1.3rem',
+    fontSize: { xs: '1.1rem', md: '1.3rem' },
     textTransform: 'none',
     boxShadow: '0 12px 30px rgba(102, 126, 234, 0.4)',
     '&:hover': {
@@ -151,6 +153,24 @@ export const recommendationsTitle: SxProps<Theme> = {
     justifyContent: 'center',
     gap: 2,
 };
+
+export const getAiSparkleIconStyle = (isAnimating: boolean): SxProps<Theme> => ({
+    fontSize: '2rem',
+    color: '#667eea',
+    ...(isAnimating && {
+        animation: 'sparkle 1.5s ease-in-out infinite',
+        '@keyframes sparkle': {
+            '0%': { transform: 'scale(1) rotate(0deg)', opacity: 0.8 },
+            '50%': { 
+                transform: 'scale(1.2) rotate(180deg)', 
+                opacity: 1, 
+                filter: 'drop-shadow(0 0 12px rgba(102, 126, 234, 0.9))',
+                color: '#764ba2'
+            },
+            '100%': { transform: 'scale(1) rotate(360deg)', opacity: 0.8 },
+        }
+    })
+});
 
 export const errorAlert: SxProps<Theme> = {
     background: 'rgba(239, 68, 68, 0.9)',

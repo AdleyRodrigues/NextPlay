@@ -3,9 +3,25 @@ import type { SxProps, Theme } from '@mui/material';
 export const paperContainer: SxProps<Theme> = {
     background: 'rgba(255, 255, 255, 0.03)',
     border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '24px',
-    p: 4,
+    borderRadius: { xs: '16px', md: '24px' },
+    p: { xs: 2.5, md: 4 },
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+};
+
+export const scrollableStack: SxProps<Theme> = {
+    overflowX: 'auto',
+    pb: 1, // Espaço para sombra/foco
+    WebkitOverflowScrolling: 'touch',
+    '&::-webkit-scrollbar': { display: 'none' },
+    msOverflowStyle: 'none',
+    scrollbarWidth: 'none',
+};
+
+export const chipsWrap: SxProps<Theme> = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+    justifyContent: { xs: 'center', md: 'flex-start' },
 };
 
 export const sectionTitle: SxProps<Theme> = {
@@ -14,7 +30,8 @@ export const sectionTitle: SxProps<Theme> = {
     fontWeight: 700,
     display: 'flex',
     alignItems: 'center',
-    gap: 1
+    gap: 1,
+    justifyContent: { xs: 'center', md: 'flex-start' },
 };
 
 export const getPlatformChipStyle = (isSelected: boolean): SxProps<Theme> => ({
@@ -161,11 +178,11 @@ export const yearLabelText: SxProps<Theme> = {
 };
 
 export const multiplayerSection: SxProps<Theme> = {
-    flex: 1
+    flex: 1,
 };
 
 export const durationSection: SxProps<Theme> = {
-    flex: 1
+    flex: 1,
 };
 
 export const getTimeChipStyle = (isSelected: boolean): SxProps<Theme> => ({

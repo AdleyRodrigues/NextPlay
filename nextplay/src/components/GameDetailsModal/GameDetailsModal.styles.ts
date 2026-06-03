@@ -34,6 +34,7 @@ export const titleText: SxProps<Theme> = {
     mb: 1,
     fontSize: { xs: '1.8rem', md: '2.5rem' },
     lineHeight: 1.2,
+    textAlign: { xs: 'center', md: 'left' },
 };
 
 export const closeButton: SxProps<Theme> = {
@@ -124,7 +125,11 @@ export const getScoreChip = (color: string): SxProps<Theme> => ({
 export const sectionTitle: SxProps<Theme> = {
     color: '#ffffff', 
     mb: 2, 
-    fontWeight: 600
+    fontWeight: 600,
+    textAlign: { xs: 'center', md: 'left' },
+    display: 'flex',
+    justifyContent: { xs: 'center', md: 'flex-start' },
+    alignItems: 'center',
 };
 
 export const accessTimeIcon: SxProps<Theme> = {
@@ -169,6 +174,7 @@ export const reasonsTitle: SxProps<Theme> = {
     fontWeight: 700, 
     display: 'flex', 
     alignItems: 'center', 
+    justifyContent: { xs: 'center', md: 'flex-start' },
     gap: 2
 };
 

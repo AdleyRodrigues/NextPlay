@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import {
     Lightbulb,
-    Star,
+    AutoAwesome,
     Timer,
     Gamepad,
     DateRange,
@@ -173,7 +173,7 @@ export const LandingPage = () => {
                         <Button
                             variant="contained"
                             onClick={handleGetRecommendations}
-                            disabled={isLoading || !isValid}
+                            disabled={isLoading}
                             sx={S.generateButton}
                         >
                             {isLoading ? 'Montando plano de treino...' : 'Gerar Recomendações'}
@@ -182,16 +182,25 @@ export const LandingPage = () => {
                 </Slide>
 
                 {/* Recommendations Section */}
-                {showRecommendations && (
+                {(isLoading || showRecommendations) && (
                     <Fade in timeout={600}>
                         <Box>
                             <Typography variant="h4" sx={S.recommendationsTitle}>
-                                <Star sx={{ fontSize: '2rem', color: '#667eea' }} />
-                                Jogos Recomendados
+                                <AutoAwesome sx={S.getAiSparkleIconStyle(isLoading)} />
+                                {isLoading ? 'Montando seu plano de treino...' : 'Jogos Recomendados'}
                             </Typography>
-                            <RecommendationsList
-                                games={recommendations}
-                            />
+
+                            {isLoading ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, gap: 2 }}>
+                                    <Typography variant="body1" sx={{ color: '#a0aec0', textAlign: 'center' }}>
+                                        🤖 Nossa IA está selecionando os melhores jogos para você...
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <RecommendationsList
+                                    games={recommendations}
+                                />
+                            )}
                         </Box>
                     </Fade>
                 )}
