@@ -17,7 +17,7 @@ public class HltbService
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "NextPlay/1.0 (HLTB Integration)");
     }
 
-    public async Task<HltbData?> GetGameDataAsync(string gameName)
+    public Task<HltbData?> GetGameDataAsync(string gameName)
     {
         try
         {
@@ -25,12 +25,12 @@ public class HltbService
 
             // Usar dados mock por enquanto (HLTB não tem API pública oficial)
             // Em produção, você poderia usar web scraping ou APIs não-oficiais
-            return GetMockHltbData(gameName);
+            return Task.FromResult(GetMockHltbData(gameName));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting HLTB data for game: {GameName}", gameName);
-            return null;
+            return Task.FromResult<HltbData?>(null);
         }
     }
 

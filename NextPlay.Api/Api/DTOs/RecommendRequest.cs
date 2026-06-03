@@ -2,10 +2,8 @@ namespace NextPlay.Api.Api.DTOs;
 
 public class RecommendRequest
 {
-    public string SteamId64 { get; set; } = string.Empty;
-    public string Vibe { get; set; } = string.Empty; // relaxar | historia | acao | etc
+    public int PlatformId { get; set; } = 4; // e.g. 187 (PS5), 18 (PS4), 1 (Xbox One), 4 (PC)
+    public string Skill { get; set; } = string.Empty; // logica | reflexos | paciencia | planejamento | cooperacao
     public string Time { get; set; } = string.Empty; // curto | medio | longo
-    public string Energy { get; set; } = "normal"; // baixa | media | alta
-    public string Lang { get; set; } = "indiferente"; // dublado | legendado | indiferente
     public int Limit { get; set; } = 20;
 }

@@ -1,28 +1,22 @@
 import { useState, useMemo } from 'react';
 
 export interface LandingFilters {
-    vibe?: string[];
+    platformId?: number;
+    skill?: string;
     time?: string[];
-    energy?: string[];
-    lang?: string[];
     limit?: number;
 }
 
 export interface RecommendationPayload {
-    steamId64: string;
-    vibe: string;
+    platformId: number;
+    skill: string;
     time: string;
-    energy: string;
-    lang: string;
     limit: number;
 }
 
 export const useLandingState = () => {
     const [filters, setFilters] = useState<LandingFilters>({
-        vibe: [],
         time: [],
-        energy: [],
-        lang: [],
         limit: 20,
     });
 
@@ -33,46 +27,22 @@ export const useLandingState = () => {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    const toggleFlavor = (flavor: string) => {
-        setFilters(prev => ({
-            ...prev,
-            vibe: prev.vibe?.includes(flavor)
-                ? prev.vibe.filter(f => f !== flavor)
-                : [...(prev.vibe || []), flavor]
-        }));
-    };
-
     const isValid = useMemo(() => {
-        return (filters.vibe?.length || 0) > 0;
-    }, [filters.vibe]);
+        return !!filters.platformId && !!filters.skill;
+    }, [filters.platformId, filters.skill]);
 
-    const buildPayload = (steamId64: string): RecommendationPayload => {
+    const buildPayload = (): RecommendationPayload => {
         return {
-            steamId64,
-            vibe: filters.vibe?.join(',') || 'relaxar',
-            time: filters.time?.join(',') || 'medio',
-            energy: filters.energy?.join(',') || 'normal',
-            lang: filters.lang?.join(',') || 'indiferente',
-            limit: filters.limit || 20,
-        };
-    };
-
-    const buildDiscoverPayload = () => {
-        return {
-            vibe: filters.vibe || [],
-            time: filters.time || [],
-            energy: filters.energy || [],
-            lang: filters.lang || [],
+            platformId: filters.platformId || 4, // Default to PC if not set
+            skill: filters.skill || '',
+            time: filters.time?.join(',') || '',
             limit: filters.limit || 20,
         };
     };
 
     const resetFilters = () => {
         setFilters({
-            vibe: [],
             time: [],
-            energy: [],
-            lang: [],
             limit: 20,
         });
     };
@@ -80,10 +50,8 @@ export const useLandingState = () => {
     return {
         filters,
         updateFilter,
-        toggleFlavor,
         isValid,
         buildPayload,
-        buildDiscoverPayload,
         resetFilters,
     };
 };

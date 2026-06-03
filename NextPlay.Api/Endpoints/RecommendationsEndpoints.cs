@@ -26,10 +26,6 @@ public static class RecommendationsEndpoints
             .WithName("GetRecommendations")
             .WithSummary("Obter recomendações de jogos baseadas em filtros");
 
-        // POST /api/feedback
-        group.MapPost("/feedback", SaveFeedback)
-            .WithName("SaveFeedback")
-            .WithSummary("Salvar feedback do usuário sobre recomendação");
     }
 
     private static async Task<IResult> GetRecommendations(
@@ -39,8 +35,8 @@ public static class RecommendationsEndpoints
     {
         try
         {
-            logger.LogInformation("🎯 ENDPOINT: Received recommendation request - SteamId: {SteamId}, Vibe: [{Vibe}], Limit: {Limit}",
-                request.SteamId64, string.Join(", ", request.Vibe), request.Limit);
+            logger.LogInformation("🎯 ENDPOINT: Received recommendation request - Platform: {Platform}, Skill: {Skill}, Limit: {Limit}",
+                request.PlatformId, request.Skill, request.Limit);
 
             var response = await recommendationService.GetRecommendationsAsync(request);
 
@@ -63,21 +59,6 @@ public static class RecommendationsEndpoints
             };
 
             return Results.BadRequest(errorResponse);
-        }
-    }
-
-    private static async Task<IResult> SaveFeedback(
-        FeedbackRequest request,
-        UserService userService)
-    {
-        try
-        {
-            await userService.SaveFeedbackAsync(request);
-            return Results.Ok(new { message = "Feedback saved successfully" });
-        }
-        catch (Exception ex)
-        {
-            return Results.BadRequest(new { code = "FEEDBACK_ERROR", message = ex.Message });
         }
     }
 }

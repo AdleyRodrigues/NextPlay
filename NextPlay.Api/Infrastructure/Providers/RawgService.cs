@@ -36,7 +36,11 @@ public sealed class RawgService : IRawgService
         _cache = cache;
         _log = log;
         if (_http.BaseAddress is null)
-            _http.BaseAddress = new Uri(_opts.BaseUrl);
+        {
+            var baseUrl = _opts.BaseUrl;
+            if (!baseUrl.EndsWith("/")) baseUrl += "/";
+            _http.BaseAddress = new Uri(baseUrl);
+        }
         _http.Timeout = TimeSpan.FromSeconds(15);
     }
 
@@ -46,7 +50,8 @@ public sealed class RawgService : IRawgService
         if (_cache.TryGetValue(key, out RawgMeta? cached)) return cached;
 
         // 1) Busca por nome (page_size configurável)
-        var searchUrl = $"/games?key={_opts.ApiKey}&search={Uri.EscapeDataString(name)}&page_size={_opts.SearchPageSize}";
+        var searchUrl = $"games?key={_opts.ApiKey}&search={Uri.EscapeDataString(name)}&page_size={_opts.SearchPageSize}";
+        _log.LogInformation("🔍 [GetGameMetaAsync] Searching RAWG for: {GameName} with URL: {Url}", name, searchUrl);
         using var res = await _http.GetAsync(searchUrl, ct);
         if (!res.IsSuccessStatusCode)
         {
@@ -76,7 +81,7 @@ public sealed class RawgService : IRawgService
             return null;
 
         var id = idProp.GetInt32();
-        var detailUrl = $"/games/{id}?key={_opts.ApiKey}";
+        var detailUrl = $"games/{id}?key={_opts.ApiKey}";
         using var detRes = await _http.GetAsync(detailUrl, ct);
         if (!detRes.IsSuccessStatusCode)
         {
@@ -106,11 +111,11 @@ public sealed class RawgService : IRawgService
         return meta;
     }
 
-    public async Task<RawgMeta?> GetGameDetailsAsync(string appId, CancellationToken ct = default)
+    public Task<RawgMeta?> GetGameDetailsAsync(string appId, CancellationToken ct = default)
     {
         // Por enquanto, retorna null pois não temos mapeamento direto de appId para RAWG
         // TODO: Implementar busca por appId usando Steam API para obter nome do jogo
-        return null;
+        return Task.FromResult<RawgMeta?>(null);
     }
 
     public async Task<IReadOnlyList<DiscoverItem>> DiscoverAsync(DiscoverRequest req, CancellationToken ct = default)
@@ -182,7 +187,7 @@ public sealed class RawgService : IRawgService
         {
             var queryParams = new Dictionary<string, string>(baseParams) { ["page"] = page.ToString() };
             var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-            var url = $"/games?{queryString}";
+            var url = $"games?{queryString}";
 
             using var response = await _http.GetAsync(url, ct);
             if (!response.IsSuccessStatusCode)
@@ -201,7 +206,7 @@ public sealed class RawgService : IRawgService
         }
     }
 
-    private static DiscoverItem MapRawgGameToDiscoverItem(RawgDiscoverGame game)
+    private static DiscoverItem MapRawgGameToDiscoverItem(RawgGameDto game)
     {
         var why = new List<string>();
 
@@ -262,18 +267,48 @@ public sealed class RawgService : IRawgService
         RawgNameDto[]? tags
     );
 
-    private sealed record RawgNameDto(string? name);
+    public sealed record RawgNameDto(string? name);
     private sealed record RawgPlatformDto(RawgPlatformObj? platform);
     private sealed record RawgPlatformObj(string? name);
 
     // DTOs para discover
-    private sealed record RawgDiscoverResponse(RawgDiscoverGame[]? results);
-    private sealed record RawgDiscoverGame(
-        string? name,
-        string? slug,
-        string? background_image,
-        int? metacritic,
-        double? rating,
-        RawgNameDto[]? genres
-    );
+    private sealed record RawgDiscoverResponse(RawgGameDto[]? results);
+    
+    public async Task<IReadOnlyList<RawgGameDto>> GetGamesByTagsAsync(string tags, int limit, CancellationToken ct = default)
+    {
+        var games = new List<RawgGameDto>();
+        try
+        {
+            var url = $"games?key={_opts.ApiKey}&tags={Uri.EscapeDataString(tags)}&page_size={limit}";
+            using var response = await _http.GetAsync(url, ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                _log.LogWarning("RAWG GetGamesByTagsAsync failed: {Status}", response.StatusCode);
+                return games;
+            }
+
+            var json = await response.Content.ReadAsStringAsync(ct);
+            var result = JsonSerializer.Deserialize<RawgDiscoverResponse>(json, _json);
+            
+            if (result?.results != null)
+            {
+                games.AddRange(result.results);
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "Error in GetGamesByTagsAsync");
+        }
+        return games;
+    }
 }
+
+public sealed record RawgGameDto(
+    int id,
+    string? name,
+    string? slug,
+    string? background_image,
+    int? metacritic,
+    double? rating,
+    NextPlay.Api.Infrastructure.Providers.RawgService.RawgNameDto[]? genres
+);

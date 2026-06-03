@@ -51,16 +51,16 @@ export const apiClient = {
         console.log('🔍 Backend Data:', backendData);
 
         const frontendData = {
-            games: backendData.items.map((item: any) => ({
+            games: backendData.items.map((item: any, index: number) => ({
                 id: item.appId.toString(),
                 name: item.name,
-                coverImage: `https://cdn.akamai.steamstatic.com/steam/apps/${item.appId}/header.jpg`,
+                coverImage: item.backgroundImage || item.headerImage || `https://cdn.akamai.steamstatic.com/steam/apps/${item.appId}/header.jpg`,
                 rating: item.scoreTotal,
                 hoursPlayed: item.playtimeForever ? item.playtimeForever / 60 : 0, // Converter minutos para horas
                 lastPlayed: item.lastPlayed || null,
                 metaScore: item.scores?.metacritic || null,
                 openCriticScore: item.scores?.openCritic || null,
-                steamScore: item.scores?.steamPosPct || null,
+                steamScore: item.scores?.steamPositivePct || null,
                 hltbMain: item.hltb?.mainHours || null,
                 reasons: item.why,
                 // Campos de conquistas (quando disponíveis)
@@ -68,6 +68,9 @@ export const apiClient = {
                 achievementsUnlocked: item.achievementsUnlocked || null,
                 // Gêneros (quando disponíveis)
                 genres: item.genres || [],
+                // Score e posição da recomendação
+                score: item.scoreTotal || 0,
+                position: index + 1,
             })),
             total: backendData.items.length,
         };
@@ -101,16 +104,16 @@ export const apiClient = {
         console.log('🔍 Backend Data:', backendData);
 
         const frontendData = {
-            games: backendData.items.map((item: any) => ({
+            games: backendData.items.map((item: any, index: number) => ({
                 id: item.appId.toString(),
                 name: item.name,
-                coverImage: `https://cdn.akamai.steamstatic.com/steam/apps/${item.appId}/header.jpg`,
+                coverImage: item.backgroundImage || item.headerImage || `https://cdn.akamai.steamstatic.com/steam/apps/${item.appId}/header.jpg`,
                 rating: item.scoreTotal,
                 hoursPlayed: item.playtimeForever ? item.playtimeForever / 60 : 0, // Converter minutos para horas
                 lastPlayed: item.lastPlayed || null,
                 metaScore: item.scores?.metacritic || null,
                 openCriticScore: item.scores?.openCritic || null,
-                steamScore: item.scores?.steamPosPct || null,
+                steamScore: item.scores?.steamPositivePct || null,
                 hltbMain: item.hltb?.mainHours || null,
                 reasons: item.why,
                 // Campos de conquistas (quando disponíveis)
@@ -118,6 +121,9 @@ export const apiClient = {
                 achievementsUnlocked: item.achievementsUnlocked || null,
                 // Gêneros (quando disponíveis)
                 genres: item.genres || [],
+                // Score e posição da recomendação
+                score: item.scoreTotal || 0,
+                position: index + 1,
             })),
             total: backendData.items.length,
         };

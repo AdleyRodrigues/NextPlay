@@ -34,10 +34,8 @@ public class Game
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation properties
-    public virtual ICollection<Ownership> Ownerships { get; set; } = new List<Ownership>();
     public virtual Scores? Scores { get; set; }
     public virtual Hltb? Hltb { get; set; }
-    public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
 }
 
 

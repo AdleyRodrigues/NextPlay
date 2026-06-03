@@ -8,17 +8,15 @@ import {
     Button,
     Chip,
     Stack,
-    IconButton,
     Fade,
+    Tooltip,
 } from '@mui/material';
 import {
     Visibility,
-    PlayArrow,
     Star,
     TrendingUp,
-    EmojiEvents,
+    Search,
 } from '@mui/icons-material';
-import { formatHours } from '../../utils/format';
 import type { Game } from '../../api/schemas';
 
 interface GameCardProps {
@@ -35,29 +33,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
         return '#e53e3e';
     };
 
-    const getProgressColor = () => {
-        const progress = game.hoursPlayed || 0;
-        const estimated = game.hltbMain || 20;
-        const percentage = (progress / estimated) * 100;
-
-        if (percentage >= 80) return '#48bb78';
-        if (percentage >= 50) return '#ed8936';
-        if (percentage >= 20) return '#4299e1';
-        return '#9f7aea';
-    };
-
-    const getProgressText = () => {
-        const progress = game.hoursPlayed || 0;
-        const estimated = game.hltbMain || 20;
-        const percentage = (progress / estimated) * 100;
-
-        if (percentage >= 100) return 'Completado!';
-        if (percentage >= 80) return 'Quase terminado!';
-        if (percentage >= 50) return 'Bem avançado';
-        if (percentage >= 20) return 'Em progresso';
-        if (progress > 0) return 'Recém começado';
-        return 'Não jogado';
-    };
 
     return (
         <Card
@@ -70,6 +45,9 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                 overflow: 'hidden',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 cursor: 'pointer',
+                height: '100%', // Garantir que todos os cards tenham a mesma altura
+                display: 'flex',
+                flexDirection: 'column',
                 '&:hover': {
                     transform: 'translateY(-8px) scale(1.02)',
                     boxShadow: '0 25px 50px rgba(0, 0, 0, 0.4)',
@@ -79,6 +57,28 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
+            {/* Posição da Recomendação */}
+            {game.position && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 12,
+                        right: 12,
+                        zIndex: 2,
+                    }}
+                >
+                    <Chip
+                        label={`#${game.position}`}
+                        size="small"
+                        sx={{
+                            background: 'rgba(102, 126, 234, 0.9)',
+                            color: '#ffffff',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                        }}
+                    />
+                </Box>
+            )}
             {/* Game Image with Hover Overlay */}
             <Box sx={{ position: 'relative', overflow: 'hidden' }}>
                 <Box
@@ -125,10 +125,10 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                     >
                         <Button
                             variant="contained"
-                            startIcon={<PlayArrow />}
+                            startIcon={<Search />}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                window.open(`https://store.steampowered.com/app/${game.id}`, '_blank');
+                                window.open(`https://www.google.com/search?q=${encodeURIComponent(game.name + ' game')}`, '_blank');
                             }}
                             sx={{
                                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -148,15 +148,15 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                                 transition: 'all 0.2s ease-in-out',
                             }}
                         >
-                            VER NO STEAM
+                            PESQUISAR JOGO
                         </Button>
                     </Box>
                 </Fade>
 
             </Box>
 
-            <CardContent sx={{ p: 3 }}>
-                <Stack spacing={2}>
+            <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <Stack spacing={2} sx={{ flex: 1 }}>
                     {/* Game Title */}
                     <Typography
                         variant="h6"
@@ -170,7 +170,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            minHeight: '2.6em',
+                            height: '2.6em', // Altura fixa para simetria
                         }}
                     >
                         {game.name}
@@ -207,85 +207,73 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                         )}
                     </Stack>
 
-                    {/* Progress Info */}
-                    <Box>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                            <Typography variant="body2" sx={{ color: '#a0aec0', fontSize: '0.8rem' }}>
-                                {formatHours(game.hoursPlayed || 0)} jogadas
-                            </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    color: getProgressColor(),
+                    {/* Recommendation Reasons */}
+                    <Box sx={{ minHeight: '80px' }}> {/* Altura mínima fixa para simetria */}
+                        {game.reasons && game.reasons.length > 0 && (
+                            <Box>
+                                <Typography variant="body2" sx={{
+                                    color: '#a0aec0',
+                                    fontSize: '0.75rem',
                                     fontWeight: 600,
-                                    fontSize: '0.8rem',
+                                    mb: 1,
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 0.5,
-                                }}
-                            >
-                                <TrendingUp sx={{ fontSize: '0.9rem' }} />
-                                {getProgressText()}
-                            </Typography>
-                        </Stack>
-
-                        {/* Progress Bar */}
-                        <Box sx={{
-                            width: '100%',
-                            height: 6,
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            borderRadius: 3,
-                            overflow: 'hidden',
-                        }}>
-                            <Box
-                                sx={{
-                                    width: `${Math.min(((game.hoursPlayed || 0) / (game.hltbMain || 20)) * 100, 100)}%`,
-                                    height: '100%',
-                                    background: `linear-gradient(90deg, ${getProgressColor()} 0%, ${getProgressColor()}dd 100%)`,
-                                    borderRadius: 3,
-                                    transition: 'width 0.3s ease-in-out',
-                                }}
-                            />
-                        </Box>
-                    </Box>
-
-                    {/* Achievements (if available) */}
-                    {game.achievementsTotal && game.achievementsTotal > 0 && (
-                        <Box>
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <EmojiEvents sx={{ fontSize: '1rem', color: '#ed8936' }} />
-                                <Typography variant="body2" sx={{ color: '#a0aec0', fontSize: '0.8rem' }}>
-                                    {game.achievementsUnlocked || 0}/{game.achievementsTotal} conquistas
+                                }}>
+                                    <TrendingUp sx={{ fontSize: '0.8rem' }} />
+                                    Por que recomendamos:
                                 </Typography>
-                            </Stack>
-                        </Box>
-                    )}
-
-                    {/* Action Button */}
-                    <Button
-                        variant="outlined"
-                        startIcon={<Visibility />}
-                        onClick={() => onViewDetails(game)}
-                        sx={{
-                            borderColor: 'rgba(102, 126, 234, 0.3)',
-                            color: '#667eea',
-                            fontWeight: 600,
-                            py: 1.5,
-                            borderRadius: '12px',
-                            textTransform: 'none',
-                            fontSize: '0.9rem',
-                            '&:hover': {
-                                borderColor: '#667eea',
-                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                                color: '#ffffff',
-                                transform: 'translateY(-1px)',
-                            },
-                            transition: 'all 0.2s ease-in-out',
-                        }}
-                    >
-                        Ver Detalhes
-                    </Button>
+                                <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                                    {game.reasons.map((reason, index) => (
+                                        <Chip
+                                            key={index}
+                                            label={reason}
+                                            size="small"
+                                            sx={{
+                                                backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                                                color: '#a0aec0',
+                                                border: '1px solid rgba(102, 126, 234, 0.3)',
+                                                fontWeight: 500,
+                                                fontSize: '0.7rem',
+                                                height: 20,
+                                                mb: 0.5,
+                                                '& .MuiChip-label': {
+                                                    px: 1,
+                                                },
+                                            }}
+                                        />
+                                    ))}
+                                </Stack>
+                            </Box>
+                        )}
+                    </Box>
                 </Stack>
+
+                {/* Action Button - Sempre no final */}
+                <Button
+                    variant="outlined"
+                    startIcon={<Visibility />}
+                    onClick={() => onViewDetails(game)}
+                    sx={{
+                        borderColor: 'rgba(102, 126, 234, 0.3)',
+                        color: '#667eea',
+                        fontWeight: 600,
+                        py: 1.5,
+                        borderRadius: '12px',
+                        textTransform: 'none',
+                        fontSize: '0.9rem',
+                        mt: 2, // Espaçamento do conteúdo acima
+                        '&:hover': {
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            color: '#ffffff',
+                            transform: 'translateY(-1px)',
+                        },
+                        transition: 'all 0.2s ease-in-out',
+                    }}
+                >
+                    Ver Detalhes
+                </Button>
             </CardContent>
         </Card>
     );

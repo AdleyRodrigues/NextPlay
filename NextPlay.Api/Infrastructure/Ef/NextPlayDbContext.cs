@@ -11,11 +11,8 @@ public class NextPlayDbContext : DbContext
     }
 
     public DbSet<Game> Games { get; set; }
-    public DbSet<Ownership> Ownerships { get; set; }
     public DbSet<Scores> Scores { get; set; }
     public DbSet<Hltb> Hltbs { get; set; }
-    public DbSet<UserPrefs> UserPrefs { get; set; }
-    public DbSet<Feedback> Feedbacks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,18 +37,6 @@ public class NextPlayDbContext : DbContext
             );
         });
 
-        // Ownership configuration
-        modelBuilder.Entity<Ownership>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.SteamId64).IsRequired().HasMaxLength(20);
-            entity.HasIndex(e => new { e.SteamId64, e.AppId }).IsUnique();
-            entity.HasOne(e => e.Game)
-                .WithMany(g => g.Ownerships)
-                .HasForeignKey(e => e.AppId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
         // Scores configuration
         modelBuilder.Entity<Scores>(entity =>
         {
@@ -69,38 +54,6 @@ public class NextPlayDbContext : DbContext
             entity.HasOne(e => e.Game)
                 .WithOne(g => g.Hltb)
                 .HasForeignKey<Hltb>(e => e.AppId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // UserPrefs configuration
-        modelBuilder.Entity<UserPrefs>(entity =>
-        {
-            entity.HasKey(e => e.SteamId64);
-            entity.Property(e => e.SteamId64).HasMaxLength(20);
-            entity.Property(e => e.LikedTags).HasConversion(
-                v => JsonSerializer.Serialize(v.Split(',', StringSplitOptions.RemoveEmptyEntries), (JsonSerializerOptions)null!),
-                v => string.Join(",", JsonSerializer.Deserialize<string[]>(v, (JsonSerializerOptions)null!) ?? Array.Empty<string>())
-            );
-            entity.Property(e => e.BlockedTags).HasConversion(
-                v => JsonSerializer.Serialize(v.Split(',', StringSplitOptions.RemoveEmptyEntries), (JsonSerializerOptions)null!),
-                v => string.Join(",", JsonSerializer.Deserialize<string[]>(v, (JsonSerializerOptions)null!) ?? Array.Empty<string>())
-            );
-            entity.Property(e => e.LikedGenres).HasConversion(
-                v => JsonSerializer.Serialize(v.Split(',', StringSplitOptions.RemoveEmptyEntries), (JsonSerializerOptions)null!),
-                v => string.Join(",", JsonSerializer.Deserialize<string[]>(v, (JsonSerializerOptions)null!) ?? Array.Empty<string>())
-            );
-        });
-
-        // Feedback configuration
-        modelBuilder.Entity<Feedback>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.SteamId64).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.Action).HasConversion<int>();
-            entity.HasIndex(e => new { e.SteamId64, e.AppId, e.Action });
-            entity.HasOne(e => e.Game)
-                .WithMany(g => g.Feedbacks)
-                .HasForeignKey(e => e.AppId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

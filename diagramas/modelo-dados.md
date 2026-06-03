@@ -1,171 +1,53 @@
-# Modelo de Dados - NextPlay
+# Modelo de Dados (Gameterapia)
 
-## Diagrama Entidade-Relacionamento
+Com a arquitetura reestruturada e a dependência da API da Steam removida, o banco de dados interno do Gameterapia (SQLite via Entity Framework Core) foi simplificado drasticamente. 
+
+Sua função primária não é gerenciar usuários, mas sim agir como um **Catálogo Cacheado** dos jogos já descobertos, guardando histórico e impedindo consultas repetidas sobre os mesmos IDs no provedor (RAWG).
+
+## 1. Diagrama de Entidades (Entity Relationship Diagram)
 
 ```mermaid
 erDiagram
+    Game ||--o| GameScore : "possui"
+    Game ||--o| GameHltb : "tem durações"
+
     Game {
-        int AppId PK "Steam App ID"
-        string Name
-        string Tags "Comma-separated"
-        string Genres "Comma-separated"
-        bool ControllerFriendly
-        string Languages "Comma-separated"
-        int ReleaseYear
+        int AppId PK "ID originário da RAWG"
+        string Name "Nome do jogo"
+        string HeaderImage "URL da arte do jogo"
+        string Genres "String de gêneros separados por vírgula"
+        datetime CreatedAt "Data de entrada no DB local"
+        datetime UpdatedAt "Última vez consultado"
     }
-    
-    Scores {
-        int AppId PK,FK "References Game.AppId"
-        int Metacritic "0-100"
-        int OpenCritic "0-100"
-        int SteamPositivePct "0-100"
-        datetime UpdatedAt
-    }
-    
-    Hltb {
-        int AppId PK,FK "References Game.AppId"
-        int MainMin "Main story in minutes"
-        int MainExtraMin "Main + Extras"
-        int CompletionistMin "100% completion"
-        datetime UpdatedAt
-    }
-    
-    Ownership {
+
+    GameScore {
         int Id PK
-        string SteamId64 FK "User Steam ID"
-        int AppId FK "References Game.AppId"
-        int PlaytimeMin "Total playtime"
-        datetime LastPlayed
-        float AchievementPct "0.0-1.0"
+        int GameId FK
+        int Metacritic "Nota da crítica 0-100"
+        int OpenCritic "Nota open critic 0-100 (opcional)"
+        int SteamPositivePct "Opcional legado"
     }
-    
-    UserPrefs {
-        string SteamId64 PK "User Steam ID"
-        string LikedTags "Comma-separated"
-        string BlockedTags "Comma-separated"
-        string LikedGenres "Comma-separated"
-        bool PtbrOnly
-        bool ControllerPreferred
-        int MinMainH "Minimum hours"
-        int MaxMainH "Maximum hours"
-        int MetacriticMin "Quality floor"
-        int OpenCriticMin "Quality floor"
-        int SteamPositiveMin "Quality floor"
-        datetime UpdatedAt
-    }
-    
-    Feedback {
+
+    GameHltb {
         int Id PK
-        string SteamId64 FK "User Steam ID"
-        int AppId FK "References Game.AppId"
-        string Action "Like/Dislike/Snooze"
-        datetime CreatedAt
+        int GameId FK
+        float MainHours "Tempo para zerar a campanha principal"
+        float MainExtraHours "Campanha + Extras"
+        float CompletionistHours "100% Platina"
     }
-    
-    Game ||--o| Scores : "has"
-    Game ||--o| Hltb : "has"
-    Game ||--o{ Ownership : "owned by users"
-    Game ||--o{ Feedback : "receives feedback"
-    UserPrefs ||--o{ Ownership : "user owns games"
-    UserPrefs ||--o{ Feedback : "user gives feedback"
 ```
 
-## Entidades Detalhadas
+## 2. Detalhamento das Entidades
 
-### 🎮 Game
+### `Game` (`dbo.Games`)
+A tabela central de armazenamento em cache. Quando o motor de curadoria encontra um jogo novo baseado nas Skills do usuário, o sistema verifica se `AppId` (ID da RAWG) já existe aqui. Se não, o jogo é persistido.
 
-**Entidade central** que representa um jogo da Steam.
+### `GameScore` (`dbo.Scores`)
+Como as notas do Metacritic raramente flutuam anos após o lançamento de um jogo, o sistema salva esses dados relacionalmente. Dessa forma, para os jogos mais recomendados do servidor, o processamento de pontuação é feito a frio (`O(1)`), diretamente via banco de dados sem a necessidade de instanciar serviços REST.
 
-- `AppId`: ID único do jogo na Steam (Primary Key)
-- `Name`: Nome do jogo
-- `Tags`: Tags do jogo (armazenadas como string separada por vírgulas)
-- `Genres`: Gêneros (armazenados como string separada por vírgulas)
-- `ControllerFriendly`: Se suporta controle
-- `Languages`: Idiomas suportados
-- `ReleaseYear`: Ano de lançamento
+### `GameHltb` (`dbo.Hltbs`)
+Dados referentes a duração do jogo (How Long To Beat). São vitais para cruzar com a variável `Time` que o usuário envia no frontend (Tempo Diário). O sistema verifica `MainHours` para garantir que o usuário que joga 1 hora por dia não seja recomendado um jogo de 120 horas se ele optou por uma experiência "Curta".
 
-### 📊 Scores
-
-**Notas e avaliações** do jogo de diferentes fontes.
-
-- `AppId`: FK para Game (também PK)
-- `Metacritic`: Nota do Metacritic (0-100)
-- `OpenCritic`: Nota do OpenCritic (0-100)
-- `SteamPositivePct`: Porcentagem de reviews positivas na Steam
-- `UpdatedAt`: Quando foi atualizado pela última vez
-
-### ⏱️ Hltb (HowLongToBeat)
-
-**Durações de gameplay** para diferentes estilos de jogo.
-
-- `AppId`: FK para Game (também PK)
-- `MainMin`: História principal em minutos
-- `MainExtraMin`: Principal + extras em minutos
-- `CompletionistMin`: Completar 100% em minutos
-- `UpdatedAt`: Quando foi atualizado
-
-### 👤 Ownership
-
-**Relacionamento** entre usuários e jogos que possuem.
-
-- `Id`: Primary Key
-- `SteamId64`: ID Steam do usuário
-- `AppId`: FK para Game
-- `PlaytimeMin`: Tempo total jogado em minutos
-- `LastPlayed`: Quando jogou pela última vez
-- `AchievementPct`: Porcentagem de conquistas (0.0-1.0)
-
-### ⚙️ UserPrefs
-
-**Preferências personalizadas** de cada usuário.
-
-- `SteamId64`: ID Steam do usuário (PK)
-- `LikedTags`: Tags favoritas
-- `BlockedTags`: Tags bloqueadas
-- `LikedGenres`: Gêneros favoritos
-- `PtbrOnly`: Se quer apenas jogos em PT-BR
-- `ControllerPreferred`: Se prefere jogos com suporte a controle
-- `MinMainH`/`MaxMainH`: Faixa de duração preferida
-- `MetacriticMin`/`OpenCriticMin`/`SteamPositiveMin`: Pisos de qualidade
-
-### 👍 Feedback
-
-**Feedback do usuário** sobre recomendações.
-
-- `Id`: Primary Key
-- `SteamId64`: ID Steam do usuário
-- `AppId`: FK para Game
-- `Action`: "Like", "Dislike", ou "Snooze"
-- `CreatedAt`: Quando o feedback foi dado
-
-## Estratégias de Armazenamento
-
-### Arrays como Strings
-
-Tags, gêneros e idiomas são armazenados como strings separadas por vírgulas:
-
-```
-Tags: "Action,Adventure,RPG"
-Genres: "Action,Role-Playing"
-Languages: "English,Portuguese,Spanish"
-```
-
-### Value Converters (EF Core)
-
-```csharp
-modelBuilder.Entity<Game>()
-    .Property(g => g.Tags)
-    .HasConversion(
-        v => string.Join(',', v),
-        v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-    );
-```
-
-### Relacionamentos
-
-- **1:1**: Game ↔ Scores, Game ↔ Hltb
-- **1:N**: Game → Ownership, Game → Feedback
-- **1:N**: UserPrefs → Ownership, UserPrefs → Feedback
-
-
-
+## 3. Decisões Arquiteturais de Persistência
+- **Fim da Tabela de Usuários**: Como a filosofia atual não rastreia SteamID, não há mais tabela de `Users` ou `Ownerships`. Isso garantiu conformidade total com privacidade (LGPD/GDPR) e eliminou 90% da latência dos antigos relacionamentos de banco N+1.
+- **SQLite**: Utilizado pelo perfil de baixo custo e alta velocidade para projetos de Catálogo e Cache local. Não necessita de infraestrutura dedicada em nuvem (como um cluster PostgreSQL).

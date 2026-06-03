@@ -1,208 +1,71 @@
-# Arquitetura Frontend - NextPlay
+# Arquitetura Frontend (Gameterapia)
 
-## Estrutura React + TypeScript
+O frontend do Gameterapia foi construído como uma SPA (Single Page Application) utilizando **React 18** e **TypeScript**, orquestrado pelo **Vite** para máxima performance de build e carregamento.
+
+## 1. Stack Tecnológico
+
+*   **Core**: React 18, TypeScript
+*   **Build Tool**: Vite
+*   **Design System & UI**: Material-UI (MUI) v5, Emotion (CSS-in-JS), ícones nativos do `@mui/icons-material`.
+*   **Estado e Fetching**: `@tanstack/react-query` (React Query)
+*   **Roteamento**: `react-router-dom`
+*   **Validação de Dados**: `zod`
+
+## 2. Estrutura de Diretórios
+
+```text
+src/
+├── api/             # Clientes HTTP (Axios/Fetch), interceptors e schemas do Zod
+├── components/      # Componentes de UI reutilizáveis
+│   ├── GameCard/    # Cartão de exibição do jogo recomendado
+│   ├── Header/      # Barra de navegação minimalista
+│   ├── LandingFilter/ # Formulário principal (Plataforma, Skill, Tempo) com Tooltips
+│   └── RecommendationsList/ # Grid responsivo de recomendações
+├── hooks/           # Custom hooks de lógica de negócios
+│   └── useLandingState.ts # Hook que gerencia o estado do formulário e validações
+├── pages/           # Componentes de página inteira (View)
+│   └── Landing/     # Página principal de recepção e exibição do fluxo
+├── routes/          # Definições do React Router
+├── theme/           # Configuração de tema global do MUI (cores, tipografia, CssBaseline)
+├── App.tsx          # Root component com os providers contextuais
+└── main.tsx         # Entry point do React
+```
+
+## 3. Fluxo de Estado (State Management)
+
+Em vez de usar Redux ou Zustand, a complexidade do estado no Gameterapia é gerida de forma localizada e assíncrona. O diagrama abaixo mostra o ciclo de vida do estado:
 
 ```mermaid
-graph TB
-    subgraph "Pages"
-        Landing[LandingPage]
-        Onboarding[OnboardingPage]
-        Settings[SettingsPage]
-        History[HistoryPage]
-    end
+stateDiagram-v2
+    [*] --> Idle: Usuário abre a página
     
-    subgraph "Components"
-        Header[Header]
-        Filter[LandingFilter]
-        RecList[RecommendationsList]
-        GameCard[GameCard]
-        PrefsForm[PreferencesForm]
-        EmptyState[EmptyState]
-    end
+    state "Preenchendo Formulário" as Form {
+        Idle --> SelectingPlatform: Escolhe Plataforma
+        SelectingPlatform --> SelectingSkill: Escolhe Habilidade
+        SelectingSkill --> SelectingTime: Escolhe Tempo (Opcional)
+        SelectingTime --> Ready: Formulário Válido
+    }
     
-    subgraph "Hooks & State"
-        LandingState[useLandingState]
-        ApiHooks[useApi]
-        ToastHook[useToast]
-        ThemeHook[useTheme]
-    end
+    Ready --> Loading: Clica em "Gerar Recomendações"
     
-    subgraph "Context"
-        SteamCtx[SteamContext]
-        ThemeCtx[ThemeContext]
-    end
+    state "Processamento" as Proc {
+        Loading --> FetchingAPI: Requisição HTTP POST
+        FetchingAPI --> Success: Dados Retornados
+        FetchingAPI --> Error: Timeout / Bad Request
+    }
     
-    subgraph "API Layer"
-        HTTPClient[http.ts]
-        APIClient[client.ts]
-        Schemas[schemas.ts]
-    end
-    
-    subgraph "Utils & Theme"
-        Format[format.ts]
-        Theme[theme/index.tsx]
-    end
-    
-    Landing --> Filter
-    Landing --> RecList
-    RecList --> GameCard
-    Settings --> PrefsForm
-    
-    Filter --> LandingState
-    GameCard --> ApiHooks
-    PrefsForm --> ApiHooks
-    
-    LandingState --> APIClient
-    ApiHooks --> APIClient
-    APIClient --> HTTPClient
-    APIClient --> Schemas
-    
-    Header --> ThemeHook
-    ThemeHook --> ThemeCtx
-    
-    Onboarding --> SteamCtx
-    LandingState --> SteamCtx
-    
-    GameCard --> Format
-    
-    style Landing fill:#e3f2fd
-    style Filter fill:#e8f5e8
-    style GameCard fill:#fff3e0
-    style LandingState fill:#f3e5f5
-    style APIClient fill:#ffebee
+    Error --> Form: Exibe Snackbar
+    Success --> Displaying: Renderiza `<RecommendationsList />`
+    Displaying --> Form: Usuário troca filtros
 ```
 
-## Estrutura de Pastas
+1.  **Estado da UI e Filtros**: Gerenciado através de `useState` encapsulados no hook `useLandingState`. O zod é usado passivamente para validar se o formulário está pronto para ser enviado (ex: se `PlatformId` e `Skill` não são nulos).
+2.  **Estado Remoto (Server State)**: Quando o formulário é enviado, o método de busca faz a chamada via API Client. Os dados retornados (a lista de jogos recomendados) são armazenados e injetados no componente `<RecommendationsList />`.
 
-```
-src/
-├── pages/                    # Páginas principais
-│   ├── Landing/             # Página inicial com filtros
-│   ├── Onboarding/          # Entrada do Steam ID
-│   ├── Settings/            # Configurações do usuário
-│   └── History/             # Histórico de recomendações
-├── components/              # Componentes reutilizáveis
-│   ├── Header/              # AppBar de navegação
-│   ├── LandingFilter/       # Filtros de recomendação
-│   ├── RecommendationsList/ # Grid de recomendações
-│   ├── GameCard/            # Card de jogo individual
-│   ├── PreferencesForm/     # Formulário de preferências
-│   └── EmptyState/          # Estados vazios
-├── hooks/                   # Custom hooks
-│   ├── useApi.ts            # React Query wrappers
-│   ├── useToast.ts          # Notificações
-│   ├── useTheme.ts          # Tema escuro/claro
-│   └── useLandingState.ts   # Estado dos filtros
-├── context/                 # Contextos globais
-│   ├── SteamContext.tsx     # Steam ID global
-│   └── ThemeContext.tsx     # Tema global
-├── api/                     # Camada de API
-│   ├── http.ts              # Axios instance
-│   ├── client.ts            # Funções de API
-│   └── schemas.ts           # Validação Zod
-├── utils/                   # Utilitários
-│   └── format.ts            # Formatação de dados
-├── theme/                   # Configuração de tema
-│   └── index.tsx            # Material UI theme
-└── routes/                  # Roteamento
-    └── AppRoutes.tsx        # Definição de rotas
-```
+## 4. Design System (MUI)
 
-## Camadas e Responsabilidades
-
-### 📄 Pages (Páginas)
-
-- **LandingPage**: Página principal com Hero + Filtros + Recomendações
-- **OnboardingPage**: Entrada do Steam ID do usuário
-- **SettingsPage**: Configurações e preferências
-- **HistoryPage**: Histórico de jogos e feedback
-
-### 🧩 Components (Componentes)
-
-- **Header**: AppBar fixa com navegação e toggle de tema
-- **LandingFilter**: Filtros interativos (vibe, duração, etc.)
-- **RecommendationsList**: Grid responsivo de recomendações
-- **GameCard**: Card individual com capa, notas, ações
-- **PreferencesForm**: Formulário de preferências do usuário
-- **EmptyState**: Estados vazios reutilizáveis
-
-### 🎣 Hooks (Custom Hooks)
-
-- **useLandingState**: Gerencia estado dos filtros + validação
-- **useApi**: Wrappers do React Query para chamadas de API
-- **useToast**: Hook para exibir notificações/snackbars
-- **useTheme**: Hook para alternar tema escuro/claro
-
-### 🌐 Context (Contextos)
-
-- **SteamContext**: Steam ID global persistido no localStorage
-- **ThemeContext**: Tema atual (escuro/claro) global
-
-### 🔌 API Layer (Camada de API)
-
-- **http.ts**: Instância do Axios configurada com interceptors
-- **client.ts**: Funções tipadas para chamar endpoints
-- **schemas.ts**: Schemas Zod para validação de dados
-
-### 🛠️ Utils & Theme
-
-- **format.ts**: Funções para formatar horas, percentuais, datas
-- **theme/index.tsx**: Configuração do Material UI com cores Steam
-
-## Fluxo de Dados
-
-### Estado Local vs Global
-
-- **Local**: Estados de formulário, loading, erros específicos
-- **Global**: Steam ID (SteamContext), tema (ThemeContext)
-
-### Gerenciamento de Estado
-
-- **React Query**: Cache de dados da API, loading, error states
-- **useState**: Estados locais de componentes
-- **Context API**: Estados globais compartilhados
-
-### Comunicação com Backend
-
-```typescript
-// 1. Hook customizado
-const { data, isLoading, error } = useRecommendByVibe(payload);
-
-// 2. Client API
-const response = await apiClient.recommendByVibe(payload);
-
-// 3. HTTP Client
-const response = await http.post('/api/recommendations', payload);
-
-// 4. Backend
-POST http://localhost:5000/api/recommendations
-```
-
-## Padrões e Convenções
-
-### Componentização
-
-- Componentes pequenos e focados
-- Props tipadas com TypeScript
-- Reutilização através de composição
-
-### Estilização
-
-- Material UI v7 como base
-- Tema customizado inspirado na Steam
-- Componentes responsivos (mobile-first)
-
-### Validação
-
-- Zod para schemas de API
-- Validação client-side nos formulários
-- TypeScript para type safety
-
-### Performance
-
-- React Query para cache e otimização
-- Lazy loading de componentes pesados
-- Memoização quando necessário
-
-
-
+O aplicativo utiliza um tema customizado criado em `src/theme/index.tsx`.
+*   **Cores Principais**: Gradientes que mesclam `#667eea` e `#764ba2` (Roxo/Azul tech), criando uma vibe moderna de "gaming premium".
+*   **Tipografia**: Fontes sem serifa (Inter, Poppins, Roboto).
+*   **Layout**: `CssBaseline` aplicado globalmente para remoção de margens nativas dos navegadores, e uso intensivo de `Stack` e `Grid` do MUI para alinhamento e responsividade (mobile-first).
+*   **Micro-interações**: Uso extenso de `<Tooltip>` para guiar o usuário em escolhas como "Plataforma" e "Tempo", além de transições de Hover e `<Fade>` / `<Slide>` para animação de entrada dos componentes.

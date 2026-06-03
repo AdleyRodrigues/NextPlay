@@ -41,16 +41,14 @@ builder.Services.AddHttpClient<IRawgService, RawgService>(client =>
 });
 
 builder.Services.AddHttpClient<RawgService>();
-builder.Services.AddHttpClient<SteamStoreService>();
-builder.Services.AddHttpClient<SteamApiService>();
 builder.Services.AddHttpClient<HltbService>();
+builder.Services.AddHttpClient<ScoresService>();
 
 // Register application services
 builder.Services.AddScoped<RecommendationService>();
-builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<RankingService>();
 builder.Services.AddScoped<GameSeeder>();
 builder.Services.AddScoped<IGameCatalog, CompositeCatalogService>();
+builder.Services.AddScoped<IScoresService, ScoresService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -83,8 +81,6 @@ app.UseHttpsRedirection();
 
 // Map endpoint groups
 app.MapRecommendationsEndpoints();
-app.MapUserEndpoints();
-app.MapRankingEndpoints();
 app.MapDevEndpoints();
 app.MapRawgEndpoints();
 app.MapDiscoverEndpoints();

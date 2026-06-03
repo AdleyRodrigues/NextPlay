@@ -46,12 +46,13 @@ public class GameSeeder
             };
 
             // Adicionar scores se disponível
-            if (gameData.MetacriticScore.HasValue || gameData.SteamScore.HasValue)
+            if (gameData.MetacriticScore.HasValue || gameData.SteamScore.HasValue || gameData.OpenCriticScore.HasValue)
             {
                 game.Scores = new Scores
                 {
                     AppId = gameData.AppId,
                     Metacritic = gameData.MetacriticScore,
+                    OpenCritic = gameData.OpenCriticScore,
                     SteamPositivePct = gameData.SteamScore,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -80,11 +81,11 @@ public class GameSeeder
         return new List<PopularGameSeed>
         {
             // 🎮 AÇÃO & AVENTURA
-            new() { AppId = 292030, Name = "The Witcher 3: Wild Hunt", Description = "RPG de mundo aberto com história épica", ReleaseDate = new DateTime(2015, 5, 19), Genres = new[] { "RPG", "Adventure", "Open World" }, Tags = new[] { "Story Rich", "Fantasy", "Choices Matter" }, MetacriticScore = 93, SteamScore = 97, HltbMainHours = 52 },
-            new() { AppId = 1245620, Name = "Elden Ring", Description = "Action RPG em mundo aberto dos criadores de Dark Souls", ReleaseDate = new DateTime(2022, 2, 25), Genres = new[] { "Action", "RPG", "Souls-like" }, Tags = new[] { "Difficult", "Fantasy", "Open World" }, MetacriticScore = 96, SteamScore = 92, HltbMainHours = 58 },
-            new() { AppId = 1086940, Name = "Baldur's Gate 3", Description = "RPG tático baseado em D&D 5e", ReleaseDate = new DateTime(2023, 8, 3), Genres = new[] { "RPG", "Turn-Based", "Fantasy" }, Tags = new[] { "Story Rich", "Choices Matter", "Co-op" }, MetacriticScore = 96, SteamScore = 96, HltbMainHours = 75 },
-            new() { AppId = 1174180, Name = "Red Dead Redemption 2", Description = "Aventura de faroeste em mundo aberto", ReleaseDate = new DateTime(2019, 12, 5), Genres = new[] { "Adventure", "Action", "Western" }, Tags = new[] { "Story Rich", "Open World", "Realistic" }, MetacriticScore = 97, SteamScore = 79, HltbMainHours = 50 },
-            new() { AppId = 1593500, Name = "God of War", Description = "Aventura mitológica nórdica", ReleaseDate = new DateTime(2022, 1, 14), Genres = new[] { "Action", "Adventure", "Mythology" }, Tags = new[] { "Story Rich", "Hack and Slash", "Norse" }, MetacriticScore = 94, SteamScore = 97, HltbMainHours = 21 },
+            new() { AppId = 292030, Name = "The Witcher 3: Wild Hunt", Description = "RPG de mundo aberto com história épica", ReleaseDate = new DateTime(2015, 5, 19), Genres = new[] { "RPG", "Adventure", "Open World" }, Tags = new[] { "Story Rich", "Fantasy", "Choices Matter" }, MetacriticScore = 93, OpenCriticScore = 92, SteamScore = 97, HltbMainHours = 52 },
+            new() { AppId = 1245620, Name = "Elden Ring", Description = "Action RPG em mundo aberto dos criadores de Dark Souls", ReleaseDate = new DateTime(2022, 2, 25), Genres = new[] { "Action", "RPG", "Souls-like" }, Tags = new[] { "Difficult", "Fantasy", "Open World" }, MetacriticScore = 96, OpenCriticScore = 95, SteamScore = 92, HltbMainHours = 58 },
+            new() { AppId = 1086940, Name = "Baldur's Gate 3", Description = "RPG tático baseado em D&D 5e", ReleaseDate = new DateTime(2023, 8, 3), Genres = new[] { "RPG", "Turn-Based", "Fantasy" }, Tags = new[] { "Story Rich", "Choices Matter", "Co-op" }, MetacriticScore = 96, OpenCriticScore = 95, SteamScore = 96, HltbMainHours = 75 },
+            new() { AppId = 1174180, Name = "Red Dead Redemption 2", Description = "Aventura de faroeste em mundo aberto", ReleaseDate = new DateTime(2019, 12, 5), Genres = new[] { "Adventure", "Action", "Western" }, Tags = new[] { "Story Rich", "Open World", "Realistic" }, MetacriticScore = 97, OpenCriticScore = 90, SteamScore = 79, HltbMainHours = 50 },
+            new() { AppId = 1593500, Name = "God of War", Description = "Aventura mitológica nórdica", ReleaseDate = new DateTime(2022, 1, 14), Genres = new[] { "Action", "Adventure", "Mythology" }, Tags = new[] { "Story Rich", "Hack and Slash", "Norse" }, MetacriticScore = 94, OpenCriticScore = 93, SteamScore = 97, HltbMainHours = 21 },
 
             // 🎯 COMPETITIVO & MULTIPLAYER
             new() { AppId = 730, Name = "Counter-Strike 2", Description = "FPS competitivo tático", ReleaseDate = new DateTime(2023, 9, 27), Genres = new[] { "FPS", "Competitive", "Tactical" }, Tags = new[] { "Multiplayer", "Esports", "Team-Based" }, SteamScore = 78 },
@@ -93,10 +94,10 @@ public class GameSeeder
             new() { AppId = 252490, Name = "Rust", Description = "Survival multiplayer hardcore", ReleaseDate = new DateTime(2018, 2, 8), Genres = new[] { "Survival", "Multiplayer", "Crafting" }, Tags = new[] { "PvP", "Base Building", "Hardcore" }, MetacriticScore = 69, SteamScore = 84 },
 
             // 🧘 RELAXANTE & CASUAL
-            new() { AppId = 413150, Name = "Stardew Valley", Description = "Simulação de fazenda relaxante", ReleaseDate = new DateTime(2016, 2, 26), Genres = new[] { "Simulation", "Casual", "Farming" }, Tags = new[] { "Relaxing", "Pixel Graphics", "Co-op" }, MetacriticScore = 89, SteamScore = 98, HltbMainHours = 53 },
-            new() { AppId = 105600, Name = "Terraria", Description = "Sandbox 2D de aventura e construção", ReleaseDate = new DateTime(2011, 5, 16), Genres = new[] { "Sandbox", "Adventure", "Survival" }, Tags = new[] { "2D", "Building", "Co-op" }, MetacriticScore = 81, SteamScore = 98, HltbMainHours = 51 },
-            new() { AppId = 892970, Name = "Valheim", Description = "Survival cooperativo viking", ReleaseDate = new DateTime(2021, 2, 2), Genres = new[] { "Survival", "Co-op", "Building" }, Tags = new[] { "Vikings", "Exploration", "Crafting" }, MetacriticScore = 81, SteamScore = 94, HltbMainHours = 75 },
-            new() { AppId = 244850, Name = "Space Engineers", Description = "Simulação de engenharia espacial", ReleaseDate = new DateTime(2019, 2, 28), Genres = new[] { "Simulation", "Building", "Space" }, Tags = new[] { "Physics", "Engineering", "Creative" }, MetacriticScore = 70, SteamScore = 85, HltbMainHours = 100 },
+            new() { AppId = 413150, Name = "Stardew Valley", Description = "Simulação de fazenda relaxante", ReleaseDate = new DateTime(2016, 2, 26), Genres = new[] { "Simulation", "Casual", "Farming" }, Tags = new[] { "Relaxing", "Pixel Graphics", "Co-op" }, MetacriticScore = 89, OpenCriticScore = 86, SteamScore = 98, HltbMainHours = 53 },
+            new() { AppId = 105600, Name = "Terraria", Description = "Sandbox 2D de aventura e construção", ReleaseDate = new DateTime(2011, 5, 16), Genres = new[] { "Sandbox", "Adventure", "Survival" }, Tags = new[] { "2D", "Building", "Co-op" }, MetacriticScore = 81, OpenCriticScore = 82, SteamScore = 98, HltbMainHours = 51 },
+            new() { AppId = 892970, Name = "Valheim", Description = "Survival cooperativo viking", ReleaseDate = new DateTime(2021, 2, 2), Genres = new[] { "Survival", "Co-op", "Building" }, Tags = new[] { "Vikings", "Exploration", "Crafting" }, MetacriticScore = 81, OpenCriticScore = 83, SteamScore = 94, HltbMainHours = 75 },
+            new() { AppId = 244850, Name = "Space Engineers", Description = "Simulação de engenharia espacial", ReleaseDate = new DateTime(2019, 2, 28), Genres = new[] { "Simulation", "Building", "Space" }, Tags = new[] { "Physics", "Engineering", "Creative" }, MetacriticScore = 70, OpenCriticScore = 72, SteamScore = 85, HltbMainHours = 100 },
 
             // 🎲 ESTRATÉGIA & PUZZLE
             new() { AppId = 261550, Name = "Cities: Skylines", Description = "Simulador de construção de cidades", ReleaseDate = new DateTime(2015, 3, 10), Genres = new[] { "Simulation", "Strategy", "City Builder" }, Tags = new[] { "Building", "Management", "Relaxing" }, MetacriticScore = 85, SteamScore = 91, HltbMainHours = 75 },
@@ -104,14 +105,21 @@ public class GameSeeder
             new() { AppId = 236850, Name = "Europa Universalis IV", Description = "Grande estratégia histórica", ReleaseDate = new DateTime(2013, 8, 13), Genres = new[] { "Strategy", "Grand Strategy", "Historical" }, Tags = new[] { "Diplomacy", "Trade", "Complex" }, MetacriticScore = 87, SteamScore = 94, HltbMainHours = 100 },
 
             // 🎨 INDIES & CRIATIVOS
-            new() { AppId = 367520, Name = "Hollow Knight", Description = "Metroidvania atmosférico", ReleaseDate = new DateTime(2017, 2, 24), Genres = new[] { "Metroidvania", "Indie", "Platformer" }, Tags = new[] { "Atmospheric", "Difficult", "Hand-drawn" }, MetacriticScore = 90, SteamScore = 97, HltbMainHours = 27 },
-            new() { AppId = 648800, Name = "Raft", Description = "Survival cooperativo oceânico", ReleaseDate = new DateTime(2022, 6, 20), Genres = new[] { "Survival", "Co-op", "Building" }, Tags = new[] { "Ocean", "Crafting", "Exploration" }, MetacriticScore = 70, SteamScore = 94, HltbMainHours = 24 },
-            new() { AppId = 418370, Name = "Subnautica", Description = "Survival subaquático atmosférico", ReleaseDate = new DateTime(2018, 1, 23), Genres = new[] { "Survival", "Adventure", "Underwater" }, Tags = new[] { "Atmospheric", "Exploration", "Sci-fi" }, MetacriticScore = 87, SteamScore = 93, HltbMainHours = 29 },
+            new() { AppId = 367520, Name = "Hollow Knight", Description = "Metroidvania atmosférico", ReleaseDate = new DateTime(2017, 2, 24), Genres = new[] { "Metroidvania", "Indie", "Platformer" }, Tags = new[] { "Atmospheric", "Difficult", "Hand-drawn" }, MetacriticScore = 90, OpenCriticScore = 84, SteamScore = 97, HltbMainHours = 27 },
+            new() { AppId = 648800, Name = "Raft", Description = "Survival cooperativo oceânico", ReleaseDate = new DateTime(2022, 6, 20), Genres = new[] { "Survival", "Co-op", "Building" }, Tags = new[] { "Ocean", "Crafting", "Exploration" }, MetacriticScore = 70, OpenCriticScore = 75, SteamScore = 94, HltbMainHours = 24 },
+            new() { AppId = 418370, Name = "Subnautica", Description = "Survival subaquático atmosférico", ReleaseDate = new DateTime(2018, 1, 23), Genres = new[] { "Survival", "Adventure", "Underwater" }, Tags = new[] { "Atmospheric", "Exploration", "Sci-fi" }, MetacriticScore = 87, OpenCriticScore = 85, SteamScore = 93, HltbMainHours = 29 },
 
             // 🎮 CLÁSSICOS MODERNOS
-            new() { AppId = 271590, Name = "Grand Theft Auto V", Description = "Ação em mundo aberto", ReleaseDate = new DateTime(2015, 4, 14), Genres = new[] { "Action", "Crime", "Open World" }, Tags = new[] { "Mature", "Multiplayer", "Driving" }, MetacriticScore = 97, SteamScore = 83, HltbMainHours = 31 },
-            new() { AppId = 1091500, Name = "Cyberpunk 2077", Description = "RPG futurístico em Night City", ReleaseDate = new DateTime(2020, 12, 10), Genres = new[] { "RPG", "Cyberpunk", "Open World" }, Tags = new[] { "Futuristic", "Story Rich", "Customization" }, MetacriticScore = 86, SteamScore = 78, HltbMainHours = 25 },
-            new() { AppId = 377160, Name = "Fallout 4", Description = "RPG pós-apocalíptico", ReleaseDate = new DateTime(2015, 11, 10), Genres = new[] { "RPG", "Post-apocalyptic", "Open World" }, Tags = new[] { "Crafting", "Settlement Building", "Retro Futuristic" }, MetacriticScore = 84, SteamScore = 82, HltbMainHours = 27 }
+            new() { AppId = 271590, Name = "Grand Theft Auto V", Description = "Ação em mundo aberto", ReleaseDate = new DateTime(2015, 4, 14), Genres = new[] { "Action", "Crime", "Open World" }, Tags = new[] { "Mature", "Multiplayer", "Driving" }, MetacriticScore = 97, OpenCriticScore = 91, SteamScore = 83, HltbMainHours = 31 },
+            new() { AppId = 1091500, Name = "Cyberpunk 2077", Description = "RPG futurístico em Night City", ReleaseDate = new DateTime(2020, 12, 10), Genres = new[] { "RPG", "Cyberpunk", "Open World" }, Tags = new[] { "Futuristic", "Story Rich", "Customization" }, MetacriticScore = 86, OpenCriticScore = 78, SteamScore = 78, HltbMainHours = 25 },
+            new() { AppId = 377160, Name = "Fallout 4", Description = "RPG pós-apocalíptico", ReleaseDate = new DateTime(2015, 11, 10), Genres = new[] { "RPG", "Post-apocalyptic", "Open World" }, Tags = new[] { "Crafting", "Settlement Building", "Retro Futuristic" }, MetacriticScore = 84, OpenCriticScore = 80, SteamScore = 82, HltbMainHours = 27 },
+
+            // 🎮 JOGOS DO USUÁRIO (Adicionados para ter scores no banco)
+            new() { AppId = 1222140, Name = "Detroit: Become Human", Description = "Aventura narrativa sobre andróides", ReleaseDate = new DateTime(2019, 12, 12), Genres = new[] { "Adventure", "Interactive Drama", "Story Rich" }, Tags = new[] { "Choices Matter", "Multiple Endings", "Sci-fi" }, MetacriticScore = 78, OpenCriticScore = 75, SteamScore = 90, HltbMainHours = 12 },
+            new() { AppId = 588650, Name = "Dead Cells", Description = "Roguelike metroidvania com combate fluido", ReleaseDate = new DateTime(2018, 8, 7), Genres = new[] { "Roguelike", "Metroidvania", "Action" }, Tags = new[] { "Difficult", "Fast-Paced", "Pixel Graphics" }, MetacriticScore = 89, OpenCriticScore = 87, SteamScore = 96, HltbMainHours = 15 },
+            new() { AppId = 268910, Name = "Cuphead", Description = "Run and gun com arte inspirada nos desenhos dos anos 30", ReleaseDate = new DateTime(2017, 9, 29), Genres = new[] { "Run and Gun", "Indie", "Difficult" }, Tags = new[] { "Hand-drawn", "Boss Rush", "Co-op" }, MetacriticScore = 88, OpenCriticScore = 86, SteamScore = 96, HltbMainHours = 10 },
+            new() { AppId = 203160, Name = "Tomb Raider", Description = "Aventura de ação com Lara Croft", ReleaseDate = new DateTime(2013, 3, 5), Genres = new[] { "Action", "Adventure", "Third Person" }, Tags = new[] { "Story Rich", "Exploration", "Puzzle" }, MetacriticScore = 86, OpenCriticScore = 84, SteamScore = 95, HltbMainHours = 12 },
+            new() { AppId = 1085660, Name = "Destiny 2", Description = "FPS online com elementos de RPG", ReleaseDate = new DateTime(2017, 10, 24), Genres = new[] { "FPS", "RPG", "Multiplayer" }, Tags = new[] { "Looter Shooter", "Co-op", "Sci-fi" }, MetacriticScore = 85, OpenCriticScore = 82, SteamScore = 78, HltbMainHours = 100 }
         };
     }
 }
@@ -125,6 +133,7 @@ public class PopularGameSeed
     public string[] Genres { get; set; } = Array.Empty<string>();
     public string[] Tags { get; set; } = Array.Empty<string>();
     public int? MetacriticScore { get; set; }
+    public int? OpenCriticScore { get; set; }
     public int? SteamScore { get; set; }
     public int? HltbMainHours { get; set; }
 }

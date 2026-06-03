@@ -1,138 +1,49 @@
-# Integração com APIs Externas - NextPlay
+# Fluxo de Integração com APIs (Gameterapia)
 
-## Visão Geral das Integrações
+O motor de curadoria do Gameterapia depende vitalmente do ecossistema open-source e de bancos de dados da internet para formar uma recomendação justa, rica em contexto e que de fato melhore a habilidade desejada pelo jogador.
 
-O NextPlay integra com múltiplas APIs para enriquecer os dados dos jogos.
+O projeto removeu dependências fechadas (como login da Steam) e hoje é agnóstico. A única e principal fonte de verdade é a **RAWG Video Games Database API**.
+
+## 1. Mapeamento de APIs
+
+### RAWG API (`api.rawg.io`)
+É o coração do sistema. Uma base RESTful colossal com mais de 800.000 jogos e inteligência atrelada.
+*   **Responsabilidade**: Descoberta de jogos por Tags/Gêneros, busca de Metacritic score, e extração de arte gráfica (background_image).
+*   **Limites**: Rate limit de requisições mensais (gratuitas), mitigado pelo uso de Cache em Memória no C#.
+*   **Endpoints consumidos**:
+    *   `/games?tags={tags}&page_size={limit}` (Para fazer o discover inicial).
+    *   `/games/{id}` (Para detalhes aprofundados, se aplicável).
+
+## 2. Fluxo da Resolução de um Jogo
+
+Quando um usuário envia o formulário "Quero desenvolver Reflexos em jogos Curtos de PS5":
 
 ```mermaid
-graph TB
-    subgraph "NextPlay Backend"
-        API[API Endpoints]
-        Services[Business Services]
-        DB[(SQLite Database)]
+sequenceDiagram
+    participant Frontend
+    participant Backend (RecommendationService)
+    participant RawgService
+    participant RAWG API
+    
+    Frontend->>Backend (RecommendationService): POST { PlatformId=187, Skill="reflexos", Time="curto" }
+    
+    Backend (RecommendationService)->>Backend (RecommendationService): MapSkillToTags ("reflexos" -> "action,fast-paced,shooter")
+    
+    Backend (RecommendationService)->>RawgService: GetGamesByTagsAsync("action,fast-paced,shooter")
+    
+    RawgService->>RAWG API: GET /games?tags=...&page_size=20
+    RAWG API-->>RawgService: Retorna lista de jogos (JSON)
+    RawgService-->>Backend (RecommendationService): Lista de RawgGameDto
+    
+    loop Para cada Jogo
+        Backend (RecommendationService)->>Backend (RecommendationService): Verifica filtro de Tempo Diário (Max 15h? Sim/Não)
+        Backend (RecommendationService)->>Backend (RecommendationService): Calcula Pontuação de Qualidade (Metacritic)
     end
     
-    subgraph "Steam Integration"
-        SteamWeb[Steam Web API]
-        SteamStore[Steam Store API]
-        SteamData[("🎮 Steam Data<br/>• User Library<br/>• Playtime<br/>• Achievements")]
-    end
-    
-    subgraph "RAWG Integration"
-        RawgAPI[RAWG API]
-        RawgData[("📊 RAWG Data<br/>• Metacritic Scores<br/>• Genres<br/>• Tags<br/>• Release Dates")]
-    end
-    
-    subgraph "OpenCritic Integration"
-        OpenAPI[OpenCritic API]
-        OpenData[("⭐ OpenCritic Data<br/>• Critic Scores<br/>• Reviews<br/>• Top Critics")]
-    end
-    
-    subgraph "HowLongToBeat"
-        HLTBAPI[HLTB API/Scraping]
-        HLTBData[("⏱️ HLTB Data<br/>• Main Story<br/>• Main + Extras<br/>• Completionist")]
-    end
-    
-    API --> Services
-    Services --> DB
-    
-    Services --> SteamWeb
-    Services --> SteamStore
-    SteamWeb --> SteamData
-    SteamStore --> SteamData
-    
-    Services --> RawgAPI
-    RawgAPI --> RawgData
-    
-    Services --> OpenAPI
-    OpenAPI --> OpenData
-    
-    Services --> HLTBAPI
-    HLTBAPI --> HLTBData
-    
-    SteamData --> DB
-    RawgData --> DB
-    OpenData --> DB
-    HLTBData --> DB
-    
-    style SteamData fill:#1b2838,color:#fff
-    style RawgData fill:#f39c12,color:#fff
-    style OpenData fill:#e74c3c,color:#fff
-    style HLTBData fill:#9b59b6,color:#fff
+    Backend (RecommendationService)-->>Frontend: Retorna Top N recomendações JSON
 ```
 
-## Detalhes das Integrações
+## 3. Estratégias de Resiliência
 
-### 🎮 Steam APIs
-
-#### Steam Web API
-
-- **Endpoint**: `https://api.steampowered.com/`
-- **Autenticação**: Steam API Key necessária
-- **Dados obtidos**:
-  - Lista de jogos do usuário (`GetOwnedGames`)
-  - Tempo de jogo e último acesso
-  - Conquistas (`GetPlayerAchievements`)
-
-#### Steam Store API
-
-- **Endpoint**: `https://store.steampowered.com/api/`
-- **Autenticação**: Não necessária
-- **Dados obtidos**:
-  - Detalhes do jogo (`appdetails`)
-  - Reviews dos usuários
-  - Preços e promoções
-
-### 📊 RAWG API (Implementado)
-
-- **Endpoint**: `https://api.rawg.io/api/`
-- **Autenticação**: API Key opcional
-- **Status**: ✅ **Implementado**
-- **Dados obtidos**:
-  - Notas do Metacritic
-  - Gêneros e tags
-  - Data de lançamento
-  - Screenshots
-
-### ⭐ OpenCritic API
-
-- **Endpoint**: `https://api.opencritic.com/`
-- **Autenticação**: Pode necessitar API Key
-- **Status**: ⏳ Pendente
-- **Dados obtidos**:
-  - Média das notas de críticos
-  - Reviews de veículos especializados
-  - Top Critics Score
-
-### ⏱️ HowLongToBeat
-
-- **Endpoint**: Não oficial / Web Scraping
-- **Autenticação**: Não necessária
-- **Status**: ⏳ Pendente
-- **Dados obtidos**:
-  - Main Story duration
-  - Main + Extras duration
-  - Completionist duration
-
-## Estratégia de Cache e Atualização
-
-### Cache em Banco
-
-- Todos os dados externos são salvos no SQLite
-- Evita chamadas desnecessárias às APIs
-- Campo `UpdatedAt` para controle de freshness
-
-### Enriquecimento Lazy
-
-- Dados são buscados sob demanda
-- No endpoint `/api/recommendations`, se um jogo não tem Metacritic, busca no RAWG
-- Atualiza o banco automaticamente
-
-### Jobs de Sincronização (Futuro)
-
-- **RefreshLibraryJob**: Sincroniza biblioteca Steam periodicamente
-- **RefreshScoresJob**: Atualiza notas e HLTB de tempos em tempos
-- **Quartz Scheduler**: Execução automática
-
-
-
+*   **Timeout Handling**: Se a API da RAWG demorar mais de 15 segundos para responder, a chamada é abortada internamente e um Warning é registrado. O aplicativo devolverá os jogos cacheados ou sinalizará erro tratado para a interface.
+*   **Reserva de Dados Locais**: Todo jogo descoberto é imediatamente registrado na tabela `Games` do SQLite (`AppId`, `Name`, `HeaderImage`, `Genres`). No futuro, o aplicativo pode servir recomendações puramente via SQLite sem bater na internet, funcionando como um indexador local.

@@ -29,6 +29,9 @@ export const GameSchema = z.object({
     criticRating: z.number().optional().nullable(),
     // Campos adicionais
     genres: z.array(z.string()).optional(),
+    // Campos para recomendação
+    score: z.number().min(0).max(1).optional(), // Score de 0 a 1
+    position: z.number().min(1).optional(), // Posição na lista de recomendações
 });
 
 export type Game = z.infer<typeof GameSchema>;

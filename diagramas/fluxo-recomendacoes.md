@@ -1,98 +1,37 @@
-# Fluxo de Recomendações - NextPlay
+# Fluxo de Interação do Usuário (Gameterapia)
 
-## Sequência Completa
+Este fluxograma em formato Mermaid representa a jornada do usuário (UX) dentro da interface frontend do Gameterapia.
 
-Este diagrama mostra o fluxo completo desde a seleção de filtros até a exibição de recomendações.
+## Jornada do Jogador
+
+A ideia central do Gameterapia é remover a fricção. O usuário não precisa criar conta, não precisa fazer login com a Steam e não precisa compartilhar dados sensíveis. O acesso é imediato e focado no "aqui e agora" do jogador.
 
 ```mermaid
-sequenceDiagram
-    participant U as Usuário
-    participant F as Frontend
-    participant B as Backend API
-    participant R as RAWG API
-    participant D as Database
+graph TD
+    A[Acessa Gameterapia (Página Inicial)] --> B{Visualiza Formulário de Perfil}
     
-    U->>F: Seleciona filtros (vibe, duração)
-    F->>F: Valida filtros obrigatórios
-    F->>F: Monta payload JSON
+    B --> C[Passo 1: Seleciona Plataforma]
+    C --> |PC, PS5, Xbox, Switch| D[Passo 2: Seleciona Habilidade Desejada]
     
-    F->>B: POST /api/recommendations
-    Note over B: Recebe RecommendRequest
+    D --> |Lógica, Reflexos, Paciência, etc.| E[Passo 3: Tempo Diário Opcional]
     
-    B->>D: Busca jogos existentes
-    D-->>B: Lista de jogos
+    E --> |Curto, Médio, Longo| F[Clica em 'Gerar Recomendações']
     
-    loop Para cada jogo sem Metacritic
-        B->>R: GET /api/games?search={name}
-        R-->>B: Dados do jogo + Metacritic
-        B->>D: Atualiza scores do jogo
-    end
+    F --> G{Validação de Frontend}
+    G -- "Faltam Dados" --> H[Exibe Tooltip / Snackbar Error (no rodapé)]
+    G -- "Tudo Certo" --> I[Loading State Ativado]
     
-    B->>B: Aplica algoritmo de scoring
-    Note over B: Calcula score baseado em:<br/>- Qualidade (Metacritic, Steam)<br/>- Preferências (tags, gêneros)<br/>- Duração (HLTB fit)<br/>- Vibe matching
+    I --> J(Faz Requisição POST para o Backend)
     
-    B->>B: Gera explicações "why"
-    B-->>F: RecommendationsResponse
+    J -- "Sucesso" --> K[Renderiza Grid de Recomendações]
+    J -- "Erro/Timeout" --> H
     
-    F->>F: Transforma dados backend → frontend
-    F->>U: Exibe cards de recomendações
-    
-    U->>F: Clica Like/Dislike/Snooze
-    F->>B: POST /api/feedback
-    B->>D: Salva feedback
-    B-->>F: Confirmação
-    F->>F: Atualiza UI (remove card)
+    K --> L[Usuário vê Jogos, Capas, Notas e 'Por que jogar?']
 ```
 
-## Etapas Detalhadas
+### Explicação do Fluxo:
 
-### 1. Seleção de Filtros
-
-- Usuário seleciona **vibe** (obrigatório): relax, história, raiva, etc.
-- Usuário seleciona **duração** (obrigatório): rápido, médio, longo, muito longo
-- Filtros opcionais: energia, social, conteúdo, controle, idioma, estrutura, sabores
-
-### 2. Validação Frontend
-
-- Hook `useLandingState` valida se campos obrigatórios estão preenchidos
-- Botão "Ver recomendações" só fica habilitado com vibe + duração
-- Monta payload JSON conforme schema da API
-
-### 3. Processamento Backend
-
-- Endpoint `/api/recommendations` recebe `RecommendRequest`
-- Busca jogos existentes no banco SQLite
-- **Enriquecimento em tempo real**: Para jogos sem Metacritic, chama RAWG API
-- Atualiza banco com novos dados obtidos
-
-### 4. Algoritmo de Scoring
-
-```
-score_total = 
-  Wq * quality +           // Metacritic, OpenCritic, Steam
-  Wp * preferences +       // Tags/gêneros favoritos
-  Wa * duration_fit +      // Adequação HLTB à duração desejada
-  Wr * recency +          // Jogos mais recentes
-  Wc * compatibility +    // PT-BR, controller
-  Wm * mood_match         // Vibe específica
-```
-
-### 5. Geração de Explicações
-
-- Função `GenerateWhyReasons()` cria lista de motivos
-- Exemplos: "High critic scores", "Perfect duration", "Matches your preferred genres"
-
-### 6. Resposta e Exibição
-
-- Backend retorna `RecommendationsResponse` com lista ordenada
-- Frontend transforma dados para formato interno
-- Exibe cards com capas, notas, duração HLTB, razões
-
-### 7. Feedback do Usuário
-
-- Botões Like/Dislike/Snooze em cada card
-- Chama `/api/feedback` para salvar preferência
-- Remove card da lista (otimistic update)
-
-
-
+1. **Acesso**: A página carrega exibindo o design minimalista de gradientes e o componente `LandingFilter.tsx`.
+2. **Seleção Interativa**: As opções de escolha (Chips) possuem `Tooltips` que explicam o que cada seleção trará de benefício cognitivo.
+3. **Validação e Loading**: O botão só funciona caso a Plataforma e a Habilidade estejam preenchidos. Quando o usuário clica, o estado da aplicação entra em Loading (prevenindo cliques duplos).
+4. **Exibição dos Resultados**: O componente `<RecommendationsList />` aparece com um *Fade In*, renderizando os `<GameCard />` detalhando os motivos de cada jogo ser um ajuste perfeito para os objetivos do usuário.

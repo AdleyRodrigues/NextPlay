@@ -1,178 +1,55 @@
-# Arquitetura Geral - NextPlay
+# Arquitetura Geral (Gameterapia)
 
-## Visão Geral
+O Gameterapia adota uma arquitetura clássica **Client-Server**, desacoplada, utilizando **React** no frontend e **.NET 8** no backend, com integração de dados via APIs externas e cache local (SQLite + In-Memory).
 
-O NextPlay é uma aplicação de recomendação de jogos composta por:
-
-- **Frontend**: React + TypeScript + Material UI
-- **Backend**: .NET 8 Minimal API + EF Core
-- **Database**: SQLite
-- **Integrações**: Steam, RAWG, OpenCritic, HowLongToBeat
+## 1. Visão de Alto Nível (High-Level Architecture)
 
 ```mermaid
-graph TB
-    subgraph "Frontend (React + TypeScript)"
-        UI[Landing Page]
-        Filter[LandingFilter]
-        Cards[GameCard Components]
-        State[useLandingState Hook]
-        API_Client[API Client]
+graph TD
+    subgraph Frontend [React SPA]
+        UI[User Interface] --> State[React Query State]
     end
-    
-    subgraph "Backend (.NET 8 Minimal API)"
-        Program[Program.cs<br/>Entry Point & DI]
-        Endpoints[Endpoints/<br/>RecommendationsEndpoints<br/>UserEndpoints<br/>RankingEndpoints<br/>DevEndpoints<br/>RawgEndpoints<br/>DiscoverEndpoints]
-        Services[Application/Services/<br/>RecommendationService<br/>UserService<br/>RankingService<br/>CompositeCatalogService]
-        Providers[Infrastructure/Providers/<br/>IgdbService<br/>RawgService<br/>SteamStoreService<br/>SteamApiService<br/>HltbService]
-        Cache[Memory Cache<br/>RAWG Data Caching]
-        DB_Context[Infrastructure/Ef/<br/>NextPlayDbContext]
+
+    subgraph Backend [.NET 8 API]
+        Endpoints[Recommendations API] --> Services[Recommendation Service]
+        Services --> Scores[Scores Service]
+        Services --> Providers[Rawg Provider]
     end
-    
-    subgraph "DTOs & Domain"
-        DTOs[Api/DTOs/<br/>Request & Response DTOs<br/>RankingRequest & RankingResponse]
-        Entities[Domain/Entities/<br/>Game, Scores, Hltb<br/>UserPrefs, Feedback]
+
+    subgraph Infraestrutura [Armazenamento e Cache]
+        MemCache[(Memory Cache)]
+        SQLite[(Banco de Dados SQLite)]
     end
-    
-    subgraph "Database (SQLite)"
-        Games[Games Table]
-        Scores[Scores Table]
-        HLTB[HLTB Table]
-        UserPrefs[UserPrefs Table]
-        Feedback[Feedback Table]
+
+    subgraph APIS Externas [External Services]
+        RAWG[RAWG.io Database API]
     end
-    
-    subgraph "External APIs"
-        IGDB[IGDB API<br/>Principal Discovery<br/>OAuth via Twitch]
-        RAWG[RAWG API<br/>Fallback Discovery<br/>Metacritic, Gêneros]
-        Steam[Steam API]
-        OpenCritic[OpenCritic API]
-        HowLong[HowLongToBeat]
-    end
-    
-    UI --> Filter
-    Filter --> State
-    State --> API_Client
-    API_Client --> Program
-    
-    Program --> Endpoints
-    Endpoints --> Services
-    Services --> Providers
-    Services --> DB_Context
-    
-    Providers --> Cache
-    
-    Endpoints --> DTOs
-    DB_Context --> Entities
-    
-    Providers --> IGDB
-    Providers --> RAWG
-    Providers --> Steam
-    Providers --> OpenCritic
-    Providers --> HowLong
-    
-    DB_Context --> Games
-    DB_Context --> Scores
-    DB_Context --> HLTB
-    DB_Context --> UserPrefs
-    DB_Context --> Feedback
-    
-    Endpoints --> API_Client
-    
-    style Program fill:#e3f2fd,color:#000
-    style Endpoints fill:#f3e5f5,color:#000
-    style Services fill:#e8f5e8,color:#000
-    style Providers fill:#fff3e0,color:#000
-    style Cache fill:#ffe0b2,color:#000
-    style IGDB fill:#e8f5e8,color:#000
-    style RAWG fill:#e1f5fe,color:#000
+
+    State -->|HTTP POST| Endpoints
+    Providers -->|GET /games| RAWG
+    Scores -->|TTL 1h| MemCache
+    Services -->|Persiste Histórico| SQLite
 ```
 
-## Componentes Principais
+## 2. Componentes do Sistema
 
-### Frontend
+### 2.1. Frontend (Client)
+A camada de apresentação. Hospeda o fluxo guiado do usuário (Plataforma, Habilidade, Tempo).
+- Recebe a entrada do usuário e aciona a API de curadoria do backend.
+- Exibe o grid de jogos recomendados utilizando componentes reutilizáveis (Material-UI).
 
-- **Landing Page**: Interface principal com filtros
-- **LandingFilter**: Componente de filtros (vibe, duração, etc.)
-- **GameCard**: Cards de jogos recomendados
-- **useLandingState**: Hook de estado dos filtros
-- **API Client**: Cliente HTTP para comunicação com backend
+### 2.2. Backend (API Layer)
+Uma aplicação web construída em ASP.NET Core 8.
+- **Endpoints**: Oferece rotas limpas e validadas (ex: `POST /api/recommendations`).
+- **Services**: A camada de regras de negócio (Application Services). Contém o `RecommendationService`, que faz o levantamento de heurísticas matemáticas e gera a pontuação (Score).
+- **Providers (Infrastructure)**: Camadas de abstração que conversam com o banco de dados e APIs externas (`RawgService`, `ScoresService`).
 
-### Backend
+### 2.3. Banco de Dados e Cache
+- **SQLite (Entity Framework Core)**: Salva um histórico base dos jogos encontrados para evitar buscas eternas nos mesmos dados e também guardar um histórico de "games já mapeados".
+- **MemoryCache (RAM)**: Guarda as notas de crítica de sites por 1 hora, impedindo que requisições simultâneas ao mesmo jogo derretam a cota da API da RAWG.
 
-- **Program.cs**: Entry point, configuração de DI e middleware
-- **Endpoints**: Classes organizadas por domínio (Recommendations, User, Dev)
-- **Services**: Lógica de negócio (RecommendationService, UserService, RankingService, CompositeCatalogService)
-- **Providers**: Integrações com APIs externas (IgdbService, RawgService, SteamStoreService, SteamApiService, HltbService)
-- **Memory Cache**: Cache em memória para tokens OAuth e resultados de descoberta
-- **EF Core DbContext**: Acesso a dados com Entity Framework
+## 3. Segurança e Performance
 
-### Database
-
-- **Games**: Jogos da Steam com metadados
-- **Scores**: Notas do Metacritic, OpenCritic, Steam
-- **HLTB**: Durações do HowLongToBeat
-- **UserPrefs**: Preferências do usuário
-- **Feedback**: Likes/Dislikes/Snooze do usuário
-
-## Estrutura de Pastas Atual
-
-```
-NextPlay.Api/
-├── Program.cs                    # Entry point e configuração
-├── Endpoints/                    # Minimal API endpoints organizados
-│   ├── RecommendationsEndpoints.cs
-│   ├── UserEndpoints.cs
-│   ├── RankingEndpoints.cs
-│   ├── DevEndpoints.cs
-│   ├── RawgEndpoints.cs
-│   └── DiscoverEndpoints.cs
-├── Application/                  # Camada de aplicação
-│   ├── Catalog/
-│   │   ├── DiscoverDtos.cs
-│   │   └── CompositeCatalogService.cs
-│   └── Services/
-│       ├── RecommendationService.cs
-│       ├── UserService.cs
-│       └── RankingService.cs
-├── Api/                          # DTOs e contratos
-│   └── DTOs/
-│       ├── RecommendRequest.cs
-│       ├── RecommendationsResponse.cs
-│       ├── RankingRequest.cs
-│       ├── RankingResponse.cs
-│       ├── UserPrefsRequest.cs
-│       └── FeedbackRequest.cs
-├── Domain/                       # Entidades de domínio
-│   └── Entities/
-│       ├── Game.cs
-│       ├── Scores.cs
-│       ├── Hltb.cs
-│       ├── UserPrefs.cs
-│       └── Feedback.cs
-└── Infrastructure/               # Infraestrutura
-    ├── Ef/
-    │   ├── NextPlayDbContext.cs
-    │   └── NextPlayDbContextFactory.cs
-    └── Providers/
-        ├── IIgdbService.cs
-        ├── IgdbService.cs
-        ├── IgdbOptions.cs
-        ├── IRawgService.cs
-        ├── RawgService.cs
-        ├── RawgOptions.cs
-        ├── SteamStoreService.cs
-        ├── SteamApiService.cs
-        └── HltbService.cs
-```
-
-## Fluxo de Dados
-
-### Sequência de Camadas
-
-1. **Frontend** → HTTP Request
-2. **Program.cs** → Roteamento
-3. **Endpoints** → Validação e orquestração
-4. **Services** → Lógica de negócio
-5. **Providers** → APIs externas (se necessário)
-6. **DbContext** → Acesso a dados
-7. **Database** → Persistência
+- **CORS**: O backend configura uma política de CORS estrita para permitir requisições apenas da URL de origem do frontend.
+- **Circuit Breaker / Retries**: O lado do cliente (via React Query) implementa tolerância a falhas na hora de carregar os dados. O backend (via HttpClient) utiliza timeouts curtos (15s) para não deixar a thread presa se a RAWG API cair.
+- **Stateless**: O backend não armazena sessões de usuário na memória. Cada requisição é única, determinística e processada independente, o que torna a aplicação perfeitamente "escalável horizontalmente" (Serverless-ready).

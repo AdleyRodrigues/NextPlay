@@ -3,6 +3,7 @@ using NextPlay.Api.Infrastructure.Ef;
 using NextPlay.Api.Infrastructure.Providers;
 using NextPlay.Api.Api.DTOs;
 using NextPlay.Api.Domain.Entities;
+using NextPlay.Api.Application.Catalog;
 
 namespace NextPlay.Api.Application.Services;
 
@@ -10,16 +11,24 @@ public class RecommendationService
 {
     private readonly NextPlayDbContext _context;
     private readonly RawgService _rawgService;
-    private readonly SteamStoreService _steamStoreService;
     private readonly HltbService _hltbService;
+    private readonly IScoresService _scoresService;
+    private readonly IGameCatalog _catalog;
     private readonly ILogger<RecommendationService> _logger;
 
-    public RecommendationService(NextPlayDbContext context, RawgService rawgService, SteamStoreService steamStoreService, HltbService hltbService, ILogger<RecommendationService> logger)
+    public RecommendationService(
+        NextPlayDbContext context, 
+        RawgService rawgService, 
+        HltbService hltbService, 
+        IScoresService scoresService, 
+        IGameCatalog catalog,
+        ILogger<RecommendationService> logger)
     {
         _context = context;
         _rawgService = rawgService;
-        _steamStoreService = steamStoreService;
         _hltbService = hltbService;
+        _scoresService = scoresService;
+        _catalog = catalog;
         _logger = logger;
     }
 
@@ -27,386 +36,119 @@ public class RecommendationService
     {
         var recommendations = new List<RecommendationItem>();
 
-        _logger.LogInformation("🚀 Starting recommendation process for SteamId64: {SteamId64} with vibe: {Vibe}",
-            request.SteamId64, request.Vibe);
+        _logger.LogInformation("🚀 Starting recommendation process for Platform: {PlatformId} with Skill: {Skill}", 
+            request.PlatformId, request.Skill);
 
         try
         {
-            // Converter Steam ID para Steam ID64 se necessário
-            var steamId64 = SteamIdConverter.ConvertToSteamId64(request.SteamId64);
-            if (steamId64 == null)
+            // 1. Mapear Skill para Tags/Gêneros
+            var targetTags = MapSkillToTags(request.Skill);
+            
+            // 2. Buscar usando RAWG API
+            var targetTagsStr = string.Join(",", targetTags.tags.Concat(targetTags.genres));
+            var rawgGames = await _rawgService.GetGamesByTagsAsync(targetTagsStr, request.Limit * 2, CancellationToken.None);
+
+            if (rawgGames == null || rawgGames.Count == 0)
             {
-                _logger.LogWarning("Invalid Steam ID format: {SteamId}", request.SteamId64);
+                _logger.LogWarning("⚠️ No games found for Platform: {PlatformId} and Skill: {Skill}", request.PlatformId, request.Skill);
                 return new RecommendationsResponse
                 {
+                    SteamId64 = "anonymous",
                     Items = new List<RecommendationItem>(),
-                    GeneratedAt = DateTime.UtcNow,
-                    TotalCount = 0
+                    TotalCount = 0,
+                    GeneratedAt = DateTime.UtcNow
                 };
             }
 
-            // Buscar jogos da biblioteca Steam do usuário
-            _logger.LogInformation("🔍 [GetRecommendationsAsync] Searching for games in database for SteamId64: {SteamId64}", steamId64);
-
-            var userGames = await _context.Ownerships
-                .Include(o => o.Game)
-                .ThenInclude(g => g.Scores)
-                .Include(o => o.Game)
-                .ThenInclude(g => g.Hltb)
-                .Where(o => o.SteamId64 == steamId64)
-                .ToListAsync();
-
-            _logger.LogInformation("📊 [GetRecommendationsAsync] Database query result: {Count} ownerships found", userGames.Count);
-
-            if (!userGames.Any())
+            // 3. Processar e transformar em recomendações
+            foreach (var dGame in rawgGames)
             {
-                _logger.LogWarning("⚠️ [GetRecommendationsAsync] No games found in user library for SteamId64: {SteamId64}", request.SteamId64);
+                // Salvar/Atualizar no banco como cache
+                var dbGame = await GetOrCreateGameInDbAsync(dGame);
 
-                // Verificar se existem ownerships para este usuário
-                var totalOwnerships = await _context.Ownerships.CountAsync(o => o.SteamId64 == steamId64);
-                _logger.LogInformation("🔍 [GetRecommendationsAsync] Total ownerships in database for this user: {Count}", totalOwnerships);
-
-                return new RecommendationsResponse
-                {
-                    Items = new List<RecommendationItem>(),
-                    GeneratedAt = DateTime.UtcNow,
-                    TotalCount = 0
-                };
-            }
-
-            _logger.LogInformation("✅ [GetRecommendationsAsync] Found {Count} games in user library", userGames.Count);
-
-            // Gerar recomendações para TODOS os jogos da biblioteca (não só os filtrados)
-            var allUserGames = userGames
-                .Where(og => og.Game != null)
-                .Select(og => og.Game!)
-                .ToList();
-
-            _logger.LogInformation("Processing {Count} games from user library", allUserGames.Count);
-
-            // Gerar recomendações para todos os jogos
-            foreach (var game in allUserGames)
-            {
-                var recommendation = await CreateRecommendationFromGameAsync(game, request, userGames);
+                var recommendation = await CreateRecommendationFromGameAsync(dbGame, dGame, request, targetTags);
                 if (recommendation != null)
                 {
                     recommendations.Add(recommendation);
                 }
             }
 
-            // Ordenar por score total (maior primeiro) e pegar mais jogos
-            var limit = Math.Max(request.Limit, 10); // Mínimo 10 recomendações
+            // 4. Rankear, filtrar por tempo se aplicável e aplicar randomização
+            var hasTimeFilter = !string.IsNullOrEmpty(request.Time);
+            var timeRange = hasTimeFilter ? MapTimeToHours(request.Time) : (min: 0, max: 999);
+
+            if (hasTimeFilter)
+            {
+                recommendations = recommendations
+                    .Where(r => r.Hltb?.MainHours == null || (r.Hltb.MainHours.Value >= timeRange.min && r.Hltb.MainHours.Value <= timeRange.max))
+                    .ToList();
+            }
+
+            var random = new Random();
             recommendations = recommendations
                 .OrderByDescending(r => r.ScoreTotal)
-                .Take(limit)
+                .ThenBy(r => random.Next(0, 100))
+                .Take(request.Limit)
                 .ToList();
 
-            _logger.LogInformation("Generated {Count} recommendations", recommendations.Count);
+            _logger.LogInformation("🎯 Generated {Count} skill-based recommendations", recommendations.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating recommendations for SteamId64: {SteamId64}", request.SteamId64);
-            throw; // Re-throw para que o frontend trate o erro
+            _logger.LogError(ex, "Error generating recommendations");
+            throw;
         }
-
-        _logger.LogInformation("✅ Generated {Count} recommendations", recommendations.Count);
 
         return new RecommendationsResponse
         {
-            SteamId64 = request.SteamId64,
+            SteamId64 = "anonymous",
             Items = recommendations,
             TotalCount = recommendations.Count,
             GeneratedAt = DateTime.UtcNow
         };
     }
 
-    private string[] MapVibeToGenres(string[] vibes)
+    private async Task<Game> GetOrCreateGameInDbAsync(NextPlay.Api.Infrastructure.Providers.RawgGameDto dto)
     {
-        var genreMapping = new Dictionary<string, string[]>
+        var existingGame = await _context.Games
+            .Include(g => g.Scores)
+            .Include(g => g.Hltb)
+            .FirstOrDefaultAsync(g => g.Name.ToLower() == (dto.name ?? "").ToLower() || g.AppId == dto.id);
+
+        if (existingGame != null)
         {
-            ["relax"] = ["Casual", "Puzzle", "Simulation"],
-            ["historia"] = ["RPG", "Adventure", "Story Rich"],
-            ["raiva"] = ["Action", "Shooter", "Fighting"],
-            ["intelecto"] = ["Strategy", "Puzzle", "Turn-Based"],
-            ["competitivo"] = ["Multiplayer", "PvP", "Sports"],
-            ["coop"] = ["Co-op", "Multiplayer", "Party"],
-            ["explorar"] = ["Open World", "Exploration", "Survival"],
-            ["nostalgia"] = ["Retro", "Pixel Graphics", "Classic"],
-            ["dificil"] = ["Souls-like", "Roguelike", "Difficult"],
-            ["casual_rapido"] = ["Casual", "Arcade", "Short"]
+            return existingGame;
+        }
+
+        var newGame = new Game
+        {
+            AppId = dto.id,
+            Name = dto.name ?? "Unknown Game",
+            HeaderImage = dto.background_image,
+            Genres = string.Join(",", dto.genres?.Select(g => g.name) ?? Array.Empty<string>()),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
-        var genres = new List<string>();
-        foreach (var vibe in vibes)
-        {
-            if (genreMapping.TryGetValue(vibe.ToLower(), out var mappedGenres))
-            {
-                genres.AddRange(mappedGenres);
-            }
-        }
-
-        return genres.Distinct().ToArray();
+        _context.Games.Add(newGame);
+        await _context.SaveChangesAsync();
+        
+        return newGame;
     }
 
-    private List<string> GenerateIntelligentReasons(Game game, Ownership ownership, RecommendRequest request, List<Ownership> userGames)
-    {
-        var reasons = new List<string>();
-
-        // 1. PROGRESSO-BASED REASONS (mais importantes)
-        var playtimeHours = ownership.PlaytimeForever / 60f;
-        var estimatedCompletionHours = game.Hltb?.MainHours ?? EstimatePlaytimeFromGenres(game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>());
-
-        if (playtimeHours > 0 && estimatedCompletionHours > 0)
-        {
-            var progressPercentage = (playtimeHours / estimatedCompletionHours) * 100;
-
-            if (progressPercentage >= 80 && progressPercentage < 100)
-            {
-                reasons.Add($"Quase terminado! {progressPercentage:F0}% completo");
-            }
-            else if (progressPercentage >= 50 && progressPercentage < 80)
-            {
-                reasons.Add($"Bem avançado ({progressPercentage:F0}% completo)");
-            }
-            else if (progressPercentage >= 20 && progressPercentage < 50)
-            {
-                reasons.Add($"Bom progresso ({progressPercentage:F0}% completo)");
-            }
-            else if (playtimeHours < 1)
-            {
-                reasons.Add("Ainda não jogado - vale a pena tentar!");
-            }
-            else if (playtimeHours < 5)
-            {
-                reasons.Add("Recém começado - continue a aventura!");
-            }
-        }
-
-        // 2. RECENCY-BASED REASONS
-        if (ownership.LastPlayed.HasValue)
-        {
-            var daysSinceLastPlayed = (DateTime.UtcNow - ownership.LastPlayed.Value).Days;
-
-            if (daysSinceLastPlayed <= 7)
-            {
-                reasons.Add("Jogado recentemente - continue!");
-            }
-            else if (daysSinceLastPlayed <= 30)
-            {
-                reasons.Add("Jogado este mês - retome a diversão");
-            }
-            else if (daysSinceLastPlayed <= 90)
-            {
-                reasons.Add("Há tempo não joga - redescubra este jogo");
-            }
-            else
-            {
-                reasons.Add("Clássico esquecido - hora de relembrar");
-            }
-        }
-
-        // 3. QUALITY-BASED REASONS
-        if (game.Scores?.Metacritic >= 90)
-            reasons.Add("Obra-prima da crítica (90+ Metacritic)");
-        else if (game.Scores?.Metacritic >= 85)
-            reasons.Add("Aclamado pela crítica mundial");
-        else if (game.Scores?.Metacritic >= 75)
-            reasons.Add("Aprovado pela crítica especializada");
-
-        if (game.Scores?.SteamPositivePct >= 95)
-            reasons.Add("Avaliação excepcional no Steam (95%+)");
-        else if (game.Scores?.SteamPositivePct >= 90)
-            reasons.Add("Excelente avaliação no Steam");
-        else if (game.Scores?.SteamPositivePct >= 80)
-            reasons.Add("Muito bem avaliado pelos jogadores");
-
-        // 4. DURATION-BASED REASONS
-        if (game.Hltb?.MainHours != null)
-        {
-            var hours = game.Hltb.MainHours.Value;
-            if (hours <= 5)
-                reasons.Add("Sessão rápida e satisfatória");
-            else if (hours <= 15)
-                reasons.Add("Duração perfeita para completar");
-            else if (hours <= 40)
-                reasons.Add("Aventura épica e envolvente");
-            else
-                reasons.Add("Centenas de horas de conteúdo");
-        }
-
-        // 5. VIBE-SPECIFIC REASONS (baseado nos filtros do usuário)
-        if (!string.IsNullOrEmpty(request.Vibe))
-        {
-            var gameGenres = game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-            var vibeGenres = MapVibeToGenres(new[] { request.Vibe });
-
-            var matchingGenres = gameGenres.Where(genre =>
-                vibeGenres.Any(vg => vg.Contains(genre, StringComparison.OrdinalIgnoreCase) ||
-                               genre.Contains(vg, StringComparison.OrdinalIgnoreCase))
-            ).ToList();
-
-            if (matchingGenres.Any())
-            {
-                reasons.Add($"Perfeito para: {request.Vibe}");
-            }
-        }
-
-        // 6. COMPARISON-BASED REASONS (comparar com outros jogos da biblioteca)
-        var similarPlaytimeGames = userGames.Where(o =>
-            Math.Abs((o.PlaytimeForever / 60f) - playtimeHours) < 5 &&
-            o.AppId != game.AppId
-        ).Count();
-
-        if (similarPlaytimeGames > 0)
-        {
-            reasons.Add("Similar aos seus jogos favoritos");
-        }
-
-        // 7. FALLBACK REASONS
-        if (!reasons.Any())
-        {
-            var gameGenres = game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-            if (gameGenres.Any())
-            {
-                reasons.Add($"Excelente {gameGenres.First().Trim()}");
-            }
-            else
-            {
-                reasons.Add("Jogo em alta na sua biblioteca");
-            }
-        }
-
-        return reasons.Take(4).ToList();
-    }
-
-    private List<string> GenerateReasons(Game game, RecommendRequest request)
-    {
-        // Método mantido para compatibilidade, mas não usado mais
-        return new List<string> { "Recomendação personalizada" };
-    }
-
-    private int? EstimatePlaytimeFromGenres(string[] genres)
-    {
-        if (genres.Any(g => g.Contains("RPG", StringComparison.OrdinalIgnoreCase)))
-            return 40;
-        if (genres.Any(g => g.Contains("Strategy", StringComparison.OrdinalIgnoreCase)))
-            return 60;
-        if (genres.Any(g => g.Contains("Shooter", StringComparison.OrdinalIgnoreCase)))
-            return 8;
-        if (genres.Any(g => g.Contains("Puzzle", StringComparison.OrdinalIgnoreCase)))
-            return 5;
-        if (genres.Any(g => g.Contains("Simulation", StringComparison.OrdinalIgnoreCase)))
-            return 100;
-
-        return 15;
-    }
-
-    private float CalculateGenreMatch(string[] gameGenres, string[] requestVibes)
-    {
-        if (requestVibes == null || requestVibes.Length == 0 || gameGenres == null || gameGenres.Length == 0)
-            return 0f;
-
-        var vibeGenres = MapVibeToGenres(requestVibes);
-        var matches = gameGenres.Count(genre =>
-            vibeGenres.Any(vg => vg.Contains(genre, StringComparison.OrdinalIgnoreCase) ||
-                               genre.Contains(vg, StringComparison.OrdinalIgnoreCase))
-        );
-
-        return gameGenres.Length > 0 ? (float)matches / gameGenres.Length : 0f;
-    }
-
-    // DEPRECATED: Funcionalidade movida para CompositeCatalogService
-    private async Task<List<object>> SearchGamesViaRawgAsync(string[] genres, RecommendRequest request)
-    {
-        return new List<object>();
-    }
-
-    // DEPRECATED: Funcionalidade movida para CompositeCatalogService
-    private async Task<List<object>> SearchSimilarGamesAsync(List<RecommendationItem> existingRecommendations, int count)
-    {
-        return new List<object>();
-    }
-
-    // DEPRECATED: Funcionalidade movida para CompositeCatalogService
-    private async Task<List<object>> SearchTrendingGamesAsync(int count)
-    {
-        return new List<object>();
-    }
-
-    // DEPRECATED: Funcionalidade movida para CompositeCatalogService
-    private async Task<RecommendationItem> CreateRecommendationFromRawgGameAsync(object rawgGame, RecommendRequest request)
-    {
-        return new RecommendationItem
-        {
-            AppId = 0,
-            Name = "Deprecated",
-            ScoreTotal = 0,
-            Why = new List<string>()
-        };
-    }
-
-    private int CalculateRawgSteamScore(double? rating)
-    {
-        if (!rating.HasValue) return 75;
-        return (int)Math.Min(rating.Value * 20, 100);
-    }
-
-    // DEPRECATED: Funcionalidade movida para CompositeCatalogService
-    private float CalculateRawgGameScore(object rawgGame, RecommendRequest request)
-    {
-        return 0f;
-    }
-
-    private float CalculateRawgGenreMatch(string[] gameGenres, string[] requestVibes)
-    {
-        if (requestVibes == null || requestVibes.Length == 0 || gameGenres == null || gameGenres.Length == 0)
-            return 0f;
-
-        var vibeGenres = MapVibeToGenres(requestVibes);
-        var matches = gameGenres.Count(genre =>
-            vibeGenres.Any(vg => vg.Contains(genre, StringComparison.OrdinalIgnoreCase) ||
-                               genre.Contains(vg, StringComparison.OrdinalIgnoreCase))
-        );
-
-        return gameGenres.Length > 0 ? (float)matches / gameGenres.Length : 0f;
-    }
-
-    // DEPRECATED: Funcionalidade movida para CompositeCatalogService
-    private List<string> GenerateRawgGameReasons(object rawgGame, RecommendRequest request)
-    {
-        return new List<string>();
-    }
-
-    private bool ShouldRecommendGame(Game game, string[]? vibes)
-    {
-        if (vibes == null || vibes.Length == 0)
-            return true;
-
-        var gameGenres = game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        var vibeGenres = MapVibeToGenres(vibes);
-
-        // Verificar se algum gênero do jogo combina com as vibes
-        return gameGenres.Any(genre =>
-            vibeGenres.Any(vg => vg.Contains(genre, StringComparison.OrdinalIgnoreCase) ||
-                               genre.Contains(vg, StringComparison.OrdinalIgnoreCase))
-        );
-    }
-
-    private async Task<RecommendationItem?> CreateRecommendationFromGameAsync(Game game, RecommendRequest request, List<Ownership> userGames)
+    private async Task<RecommendationItem?> CreateRecommendationFromGameAsync(Game game, NextPlay.Api.Infrastructure.Providers.RawgGameDto dto, RecommendRequest request, (string[] genres, string[] tags) targetTags)
     {
         try
         {
-            // Buscar dados de ownership para este jogo
-            var ownership = userGames.FirstOrDefault(o => o.AppId == game.AppId);
+            var finalScores = new ScoresDto
+            {
+                Metacritic = dto.metacritic ?? game.Scores?.Metacritic,
+                OpenCritic = game.Scores?.OpenCritic,
+                SteamPositivePct = game.Scores?.SteamPositivePct ?? 0
+            };
 
-            if (ownership == null)
-                return null;
-
-            // Calcular score baseado em múltiplos fatores
-            var score = CalculateGameScore(game, ownership, request);
-
-            // Gerar razões inteligentes baseadas no progresso e dados reais
-            var reasons = GenerateIntelligentReasons(game, ownership, request, userGames);
+            var score = CalculateSkillScore(game, finalScores, request);
+            var reasons = GenerateSkillReasons(game, finalScores, request);
 
             return new RecommendationItem
             {
@@ -414,119 +156,94 @@ public class RecommendationService
                 Name = game.Name,
                 BackgroundImage = game.HeaderImage ?? "",
                 HeaderImage = game.HeaderImage,
-                Scores = new ScoresDto
-                {
-                    Metacritic = game.Scores?.Metacritic,
-                    OpenCritic = game.Scores?.OpenCritic,
-                    SteamPositivePct = game.Scores?.SteamPositivePct ?? 0
-                },
-                Hltb = new HltbDto
-                {
-                    MainHours = game.Hltb?.MainHours
-                },
+                Scores = finalScores,
+                Hltb = new HltbDto { MainHours = game.Hltb?.MainHours ?? EstimatePlaytimeFromGenres(game.Genres?.Split(',') ?? Array.Empty<string>()) },
                 ScoreTotal = score,
                 Why = reasons,
-                PlaytimeForever = ownership.PlaytimeForever,
-                LastPlayed = ownership.LastPlayed,
-                // Dados de conquistas (quando disponíveis)
-                AchievementsTotal = game.AchievementsTotal,
-                AchievementsUnlocked = game.AchievementsUnlocked,
-                // Gêneros
+                PlaytimeForever = 0,
                 Genres = game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>()
             };
-
-            _logger.LogInformation("🏆 [CreateRecommendationFromGameAsync] Game {AppId} ({Name}): {Unlocked}/{Total} achievements in recommendation",
-                game.AppId, game.Name, game.AchievementsUnlocked, game.AchievementsTotal);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error creating recommendation for game {AppId}", game.AppId);
+            _logger.LogWarning(ex, "Error creating recommendation for game {Name}", game.Name);
             return null;
         }
     }
 
-    private float CalculateGameScore(Game game, Ownership ownership, RecommendRequest request)
+    private float CalculateSkillScore(Game game, ScoresDto scores, RecommendRequest request)
     {
         var score = 0f;
 
-        // 1. PROGRESSO-BASED SCORE (mais importante - 40% do score)
-        var playtimeHours = ownership.PlaytimeForever / 60f;
-        var estimatedCompletionHours = game.Hltb?.MainHours ?? EstimatePlaytimeFromGenres(game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>());
+        // Quality Score (60%)
+        if (scores.Metacritic.HasValue) score += (scores.Metacritic.Value / 100f) * 0.4f;
+        if (scores.OpenCritic.HasValue) score += (scores.OpenCritic.Value / 100f) * 0.2f;
 
-        if (playtimeHours > 0 && estimatedCompletionHours > 0)
-        {
-            var progressPercentage = (playtimeHours / estimatedCompletionHours) * 100;
+        // Base score for simply being returned by the discovery engine
+        score += 0.4f;
 
-            // Bonus para jogos quase terminados
-            if (progressPercentage >= 80 && progressPercentage < 100)
-            {
-                score += 0.4f; // Máximo bonus para jogos quase terminados
-            }
-            else if (progressPercentage >= 50 && progressPercentage < 80)
-            {
-                score += 0.3f; // Bom progresso
-            }
-            else if (progressPercentage >= 20 && progressPercentage < 50)
-            {
-                score += 0.2f; // Progresso moderado
-            }
-            else if (playtimeHours < 1)
-            {
-                score += 0.15f; // Jogos não jogados têm prioridade moderada
-            }
-            else if (playtimeHours < 5)
-            {
-                score += 0.25f; // Jogos recém começados
-            }
-        }
-        else if (playtimeHours < 1)
-        {
-            score += 0.1f; // Jogos não jogados
-        }
-
-        // 2. QUALITY-BASED SCORE (25% do score)
-        if (game.Scores != null)
-        {
-            var qualityScore = 0f;
-            if (game.Scores.Metacritic.HasValue)
-                qualityScore += game.Scores.Metacritic.Value / 100f * 0.15f;
-            if (game.Scores.SteamPositivePct.HasValue)
-                qualityScore += game.Scores.SteamPositivePct.Value / 100f * 0.1f;
-            if (game.Scores.OpenCritic.HasValue)
-                qualityScore += game.Scores.OpenCritic.Value / 100f * 0.05f;
-
-            score += qualityScore;
-        }
-
-        // 3. RECENCY-BASED SCORE (20% do score)
-        if (ownership.LastPlayed.HasValue)
-        {
-            var daysSinceLastPlayed = (DateTime.UtcNow - ownership.LastPlayed.Value).Days;
-            var recencyScore = Math.Max(0, 1f - (daysSinceLastPlayed / 365f)) * 0.2f;
-            score += recencyScore;
-        }
-
-        // 4. VIBE-MATCH SCORE (15% do score)
-        if (!string.IsNullOrEmpty(request.Vibe))
-        {
-            var vibeScore = CalculateVibeMatch(game, new[] { request.Vibe }) * 0.15f;
-            score += vibeScore;
-        }
-
-        return Math.Min(score, 1f); // Cap em 1.0
+        return Math.Min(score, 1f);
     }
 
-    private float CalculateVibeMatch(Game game, string[] vibes)
+    private List<string> GenerateSkillReasons(Game game, ScoresDto scores, RecommendRequest request)
     {
-        var gameGenres = game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        var vibeGenres = MapVibeToGenres(vibes);
+        var reasons = new List<string>();
 
-        var matches = gameGenres.Count(genre =>
-            vibeGenres.Any(vg => vg.Contains(genre, StringComparison.OrdinalIgnoreCase) ||
-                               genre.Contains(vg, StringComparison.OrdinalIgnoreCase))
-        );
+        // Razão baseada na habilidade
+        var skillReason = request.Skill.ToLower() switch
+        {
+            "logica" => "Exercita fortemente o raciocínio lateral e resolução de problemas.",
+            "reflexos" => "Exige alta agilidade e tempo de resposta rápido.",
+            "paciencia" => "Ensina resiliência através de desafios contínuos.",
+            "estrategia" => "Perfeito para desenvolver planejamento a longo prazo.",
+            "cooperacao" => "Focado em trabalho em equipe e comunicação eficiente.",
+            _ => "Recomendado para o seu desenvolvimento."
+        };
+        reasons.Add(skillReason);
 
-        return gameGenres.Length > 0 ? (float)matches / gameGenres.Length : 0f;
+        if (scores.Metacritic >= 85) reasons.Add("Aclamado pela crítica mundial (Meta 85+)");
+        else if (scores.Metacritic >= 75) reasons.Add("Aprovado pela crítica especializada");
+
+        var genres = game.Genres?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        if (genres.Any())
+        {
+            reasons.Add($"Excelente título de {genres.First().Trim()}");
+        }
+
+        return reasons.Take(3).ToList();
     }
 
+    private (string[] genres, string[] tags) MapSkillToTags(string skill)
+    {
+        return skill.ToLower() switch
+        {
+            "logica" => (new[] { "puzzle", "strategy" }, new[] { "logic", "puzzle-platformer" }),
+            "reflexos" => (new[] { "action", "shooter", "fighting" }, new[] { "fast-paced", "bullet-hell" }),
+            "paciencia" => (new[] { "action", "rpg" }, new[] { "souls-like", "roguelike", "difficult" }),
+            "estrategia" => (new[] { "strategy", "simulation" }, new[] { "resource-management", "city-builder", "turn-based" }),
+            "cooperacao" => (new[] { "action", "adventure" }, new[] { "co-op", "multiplayer", "local-co-op" }),
+            _ => (Array.Empty<string>(), Array.Empty<string>())
+        };
+    }
+
+    private (int min, int max) MapTimeToHours(string time)
+    {
+        return time.ToLower() switch
+        {
+            "curto" => (0, 15),    // Menos tempo diário -> jogos com campanhas mais curtas
+            "medio" => (10, 40),   // Tempo médio diário -> jogos com duração padrão
+            "longo" => (30, 999),  // Bastante tempo diário -> pode encarar RPGs e jogos massivos
+            _ => (0, 999)
+        };
+    }
+
+    private int? EstimatePlaytimeFromGenres(string[] genres)
+    {
+        if (genres.Any(g => g.Contains("RPG", StringComparison.OrdinalIgnoreCase))) return 40;
+        if (genres.Any(g => g.Contains("Strategy", StringComparison.OrdinalIgnoreCase))) return 60;
+        if (genres.Any(g => g.Contains("Shooter", StringComparison.OrdinalIgnoreCase))) return 8;
+        if (genres.Any(g => g.Contains("Puzzle", StringComparison.OrdinalIgnoreCase))) return 5;
+        if (genres.Any(g => g.Contains("Simulation", StringComparison.OrdinalIgnoreCase))) return 100;
+        return 15;
+    }
 }
