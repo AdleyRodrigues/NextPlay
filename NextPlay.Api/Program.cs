@@ -55,7 +55,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -85,11 +85,14 @@ app.MapDevEndpoints();
 app.MapRawgEndpoints();
 app.MapDiscoverEndpoints();
 
-// Ensure database is created
+// Ensure database is created and seeded
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<NextPlayDbContext>();
     context.Database.EnsureCreated();
+    
+    var seeder = scope.ServiceProvider.GetRequiredService<GameSeeder>();
+    await seeder.SeedPopularGamesAsync();
 }
 
 app.Run();
