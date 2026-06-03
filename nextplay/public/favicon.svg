@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient (Sleek Dark Purple to Indigo) -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0816"/>
+      <stop offset="100%" stop-color="#1A152E"/>
+    </linearGradient>
+    
+    <!-- Neon Controller Gradient (Violet to Cyan) -->
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a29bfe"/>
+      <stop offset="100%" stop-color="#00cec9"/>
+    </linearGradient>
+
+    <!-- Brain Gradient (Hot Pink to Violet) -->
+    <linearGradient id="brainGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#fd79a8"/>
+      <stop offset="100%" stop-color="#e84393"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Round Background -->
+  <rect width="512" height="512" rx="140" fill="url(#bgGrad)"/>
+
+  <!-- Controller Body (Outline) -->
+  <path d="M138,180 H374 C420,180 448,220 448,260 C448,340 398,390 350,390 C310,390 290,360 256,360 C222,360 202,390 162,390 C114,390 64,340 64,260 C64,220 92,180 138,180 Z" fill="none" stroke="url(#primaryGrad)" stroke-width="24" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- D-Pad (Left Side) -->
+  <path d="M150,245 V295 M125,270 H175" stroke="url(#primaryGrad)" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="150" cy="270" r="6" fill="#0B0816"/>
+
+  <!-- Action Buttons (Right Side) -->
+  <circle cx="362" cy="248" r="10" fill="#00cec9"/>
+  <circle cx="362" cy="292" r="10" fill="#00cec9"/>
+  <circle cx="340" cy="270" r="10" fill="#00cec9"/>
+  <circle cx="384" cy="270" r="10" fill="#00cec9"/>
+
+  <!-- Center Brain (Gameterapia!) -->
+  <!-- Left Hemisphere (3 lobes) -->
+  <path d="M246,215 C215,215 205,235 218,245 C205,250 205,270 222,275 C210,285 225,305 246,295" fill="none" stroke="url(#brainGrad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M246,238 C230,238 230,252 240,257" fill="none" stroke="url(#brainGrad)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M246,272 C230,272 230,282 242,282" fill="none" stroke="url(#brainGrad)" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Right Hemisphere (3 lobes - Symmetrical) -->
+  <path d="M266,215 C297,215 307,235 294,245 C307,250 307,270 290,275 C302,285 287,305 266,295" fill="none" stroke="url(#brainGrad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M266,238 C282,238 282,252 272,257" fill="none" stroke="url(#brainGrad)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M266,272 C282,272 282,282 270,282" fill="none" stroke="url(#brainGrad)" stroke-width="8" stroke-linecap="round"/>
+</svg>
