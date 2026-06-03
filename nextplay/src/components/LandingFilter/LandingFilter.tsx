@@ -20,6 +20,7 @@ import {
     Mood,
 } from '@mui/icons-material';
 import type { LandingFilters } from '../../hooks/useLandingState';
+import * as S from './LandingFilter.styles';
 
 interface LandingFilterProps {
     filters: LandingFilters;
@@ -81,20 +82,11 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
     const currentYear = new Date().getFullYear();
 
     return (
-        <Paper
-            elevation={0}
-            sx={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '24px',
-                p: 4,
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            }}
-        >
+        <Paper elevation={0} sx={S.paperContainer}>
             <Stack spacing={5}>
                 {/* 1. Platform */}
                 <Box>
-                    <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6" sx={S.sectionTitle}>
                         <VideogameAsset sx={{ color: '#667eea' }} /> Onde você joga?
                     </Typography>
                     <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
@@ -103,28 +95,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                 <Chip
                                     label={`${option.icon} ${option.label}`}
                                     onClick={() => onFilterChange('platformId', option.value)}
-                                    sx={{
-                                        px: 1,
-                                        py: 2.5,
-                                        borderRadius: '12px',
-                                        fontSize: '0.95rem',
-                                        fontWeight: 600,
-                                        backgroundColor: filters.platformId === option.value
-                                            ? 'rgba(102, 126, 234, 0.2)'
-                                            : 'rgba(255, 255, 255, 0.05)',
-                                        color: filters.platformId === option.value
-                                            ? '#667eea'
-                                            : '#a0aec0',
-                                        border: `1px solid ${filters.platformId === option.value
-                                            ? 'rgba(102, 126, 234, 0.5)'
-                                            : 'transparent'}`,
-                                        '&:hover': {
-                                            backgroundColor: filters.platformId === option.value
-                                                ? 'rgba(102, 126, 234, 0.3)'
-                                                : 'rgba(255, 255, 255, 0.1)',
-                                        },
-                                        transition: 'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    }}
+                                    sx={S.getPlatformChipStyle(filters.platformId === option.value)}
                                 />
                             </Tooltip>
                         ))}
@@ -133,7 +104,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
 
                 {/* 2. Skills */}
                 <Box>
-                    <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6" sx={S.sectionTitle}>
                         <Psychology sx={{ color: '#ff77c6' }} /> O que quer desenvolver?
                     </Typography>
                     <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
@@ -142,28 +113,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                 <Chip
                                     label={`${option.icon} ${option.label}`}
                                     onClick={() => onFilterChange('skill', option.value)}
-                                    sx={{
-                                        px: 1,
-                                        py: 2.5,
-                                        borderRadius: '12px',
-                                        fontSize: '0.95rem',
-                                        fontWeight: 600,
-                                        backgroundColor: filters.skill === option.value
-                                            ? 'rgba(255, 119, 198, 0.2)'
-                                            : 'rgba(255, 255, 255, 0.05)',
-                                        color: filters.skill === option.value
-                                            ? '#ff77c6'
-                                            : '#a0aec0',
-                                        border: `1px solid ${filters.skill === option.value
-                                            ? 'rgba(255, 119, 198, 0.5)'
-                                            : 'transparent'}`,
-                                        '&:hover': {
-                                            backgroundColor: filters.skill === option.value
-                                                ? 'rgba(255, 119, 198, 0.3)'
-                                                : 'rgba(255, 255, 255, 0.1)',
-                                        },
-                                        transition: 'background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    }}
+                                    sx={S.getSkillChipStyle(filters.skill === option.value)}
                                 />
                             </Tooltip>
                         ))}
@@ -171,29 +121,15 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
 
                     {/* Psychological Benefit Box */}
                     {filters.skill && (
-                        <Box sx={{
-                            mt: 3,
-                            p: 2,
-                            borderRadius: '12px',
-                            background: 'linear-gradient(135deg, rgba(255, 119, 198, 0.1) 0%, rgba(102, 126, 234, 0.05) 100%)',
-                            border: '1px solid rgba(255, 119, 198, 0.2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 2,
-                            animation: 'fadeIn 0.5s ease',
-                            '@keyframes fadeIn': {
-                                from: { opacity: 0, transform: 'translateY(-10px)' },
-                                to: { opacity: 1, transform: 'translateY(0)' }
-                            }
-                        }}>
-                            <Typography sx={{ fontSize: '2.5rem', lineHeight: 1 }}>
+                        <Box sx={S.benefitBox}>
+                            <Typography sx={S.benefitIcon}>
                                 {skillOptions.find(o => o.value === filters.skill)?.icon}
                             </Typography>
                             <Box>
-                                <Typography variant="subtitle2" sx={{ color: '#ff77c6', fontWeight: 800, mb: 0.5, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>
+                                <Typography variant="subtitle2" sx={S.benefitTitle}>
                                     Benefício Psicológico e Cognitivo
                                 </Typography>
-                                <Typography variant="body2" sx={{ color: '#e2e8f0', lineHeight: 1.5, fontSize: '0.9rem' }}>
+                                <Typography variant="body2" sx={S.benefitText}>
                                     {skillOptions.find(o => o.value === filters.skill)?.tooltip}
                                 </Typography>
                             </Box>
@@ -201,11 +137,11 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                     )}
                 </Box>
 
-                <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)' }} />
+                <Divider sx={S.divider} />
 
                 {/* 3. Vibes (New) */}
                 <Box>
-                    <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6" sx={S.sectionTitle}>
                         <Mood sx={{ color: '#48bb78' }} /> Qual a sua Vibe de hoje?
                     </Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -214,28 +150,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                 <Chip
                                     label={`${option.icon} ${option.label}`}
                                     onClick={() => toggleArrayFilter('vibes', option.value)}
-                                    sx={{
-                                        px: 0.5,
-                                        py: 2,
-                                        borderRadius: '10px',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 500,
-                                        backgroundColor: filters.vibes?.includes(option.value)
-                                            ? 'rgba(72, 187, 120, 0.2)'
-                                            : 'rgba(255, 255, 255, 0.05)',
-                                        color: filters.vibes?.includes(option.value)
-                                            ? '#48bb78'
-                                            : '#a0aec0',
-                                        border: `1px solid ${filters.vibes?.includes(option.value)
-                                            ? 'rgba(72, 187, 120, 0.5)'
-                                            : 'transparent'}`,
-                                        '&:hover': {
-                                            backgroundColor: filters.vibes?.includes(option.value)
-                                                ? 'rgba(72, 187, 120, 0.3)'
-                                                : 'rgba(255, 255, 255, 0.1)',
-                                        },
-                                        transition: 'background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease',
-                                    }}
+                                    sx={S.getVibeChipStyle(filters.vibes?.includes(option.value) ?? false)}
                                 />
                             </Tooltip>
                         ))}
@@ -244,40 +159,29 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
 
                 {/* 4. Release Year Slider (New) */}
                 <Box>
-                    <Typography variant="h6" sx={{ color: '#ffffff', mb: 4, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6" sx={S.yearSectionTitle}>
                         <DateRange sx={{ color: '#ed8936' }} /> Era do Jogo
                     </Typography>
-                    <Box sx={{ px: 2 }}>
+                    <Box sx={S.sliderContainer}>
                         <Slider
                             value={[filters.minYear || 1990, filters.maxYear || currentYear]}
                             onChange={handleYearChange}
                             valueLabelDisplay="on"
                             min={1985}
                             max={currentYear}
-                            sx={{
-                                color: '#ed8936',
-                                '& .MuiSlider-thumb': {
-                                    backgroundColor: '#ffffff',
-                                    border: '2px solid currentColor',
-                                    boxShadow: '0 0 10px rgba(237, 137, 54, 0.5)',
-                                },
-                                '& .MuiSlider-valueLabel': {
-                                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                                    borderRadius: '8px',
-                                }
-                            }}
+                            sx={S.slider}
                         />
                     </Box>
-                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
-                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>Retrô</Typography>
-                        <Typography variant="body2" sx={{ color: '#a0aec0' }}>Nova Geração</Typography>
+                    <Stack direction="row" justifyContent="space-between" sx={S.yearLabelsContainer}>
+                        <Typography variant="body2" sx={S.yearLabelText}>Retrô</Typography>
+                        <Typography variant="body2" sx={S.yearLabelText}>Nova Geração</Typography>
                     </Stack>
                 </Box>
 
                 {/* 5. Multiplayer & Time */}
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={4}>
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={S.multiplayerSection}>
+                        <Typography variant="h6" sx={S.sectionTitle}>
                             <People sx={{ color: '#4299e1' }} /> Experiência
                         </Typography>
                         <FormControlLabel
@@ -296,8 +200,8 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                         />
                     </Box>
 
-                    <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={S.durationSection}>
+                        <Typography variant="h6" sx={S.sectionTitle}>
                             <AccessTime sx={{ color: '#9f7aea' }} /> Duração (Tempo para zerar)
                         </Typography>
                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -306,17 +210,7 @@ export const LandingFilter: React.FC<LandingFilterProps> = ({
                                     key={timeStr}
                                     label={timeStr}
                                     onClick={() => toggleArrayFilter('time', timeStr.toLowerCase())}
-                                    sx={{
-                                        backgroundColor: filters.time?.includes(timeStr.toLowerCase())
-                                            ? 'rgba(159, 122, 234, 0.2)'
-                                            : 'rgba(255, 255, 255, 0.05)',
-                                        color: filters.time?.includes(timeStr.toLowerCase())
-                                            ? '#9f7aea'
-                                            : '#a0aec0',
-                                        border: `1px solid ${filters.time?.includes(timeStr.toLowerCase())
-                                            ? 'rgba(159, 122, 234, 0.5)'
-                                            : 'transparent'}`,
-                                    }}
+                                    sx={S.getTimeChipStyle(filters.time?.includes(timeStr.toLowerCase()) ?? false)}
                                 />
                             ))}
                         </Stack>

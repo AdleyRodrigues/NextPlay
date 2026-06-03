@@ -5,14 +5,14 @@ import type { RecommendationPayload } from '../hooks/useLandingState';
 
 export const apiClient = {
     refresh: async (steamId64: string) => {
-        console.log('🔄 Refreshing Steam library for:', steamId64);
+
 
         try {
             // Chama a API real do backend
             const response = await http.get(`/api/refresh/${steamId64}`);
             const backendData = response.data;
 
-            console.log('📚 Backend refresh response:', backendData);
+
 
             // Transforma a resposta para o formato esperado pelo frontend
             const frontendData = {
@@ -32,7 +32,7 @@ export const apiClient = {
     },
 
     savePreferences: async (preferences: Preferences) => {
-        console.log('💾 Saving preferences:', preferences);
+
 
         try {
             const response = await http.put('/api/userprefs', preferences);
@@ -44,12 +44,12 @@ export const apiClient = {
     },
 
     recommend: async (payload: RecommendationPayload) => {
-        console.log('🔍 Sending recommendation request to backend:', payload);
+
 
         const response = await http.post('/api/recommendations', payload);
         const backendData = response.data;
 
-        console.log('🔍 Backend Data:', backendData);
+
 
         const frontendData = {
             games: backendData.items.map((item: any, index: number) => ({
@@ -76,13 +76,13 @@ export const apiClient = {
             total: backendData.items.length,
         };
 
-        console.log('🎮 Frontend Data:', frontendData);
+
 
         return RecommendResponseSchema.parse(frontendData);
     },
 
     feedback: async (feedback: Feedback) => {
-        console.log('💬 Sending feedback:', feedback);
+
 
         try {
             const response = await http.post('/api/feedback', feedback);
@@ -94,7 +94,7 @@ export const apiClient = {
     },
 
     recommendByVibe: async (payload: RecommendationPayload) => {
-        console.log('🚀 Sending request to backend:', payload);
+
 
         // Chama a API real do backend (sem fallback)
         const response = await http.post('/api/recommendations', payload);
@@ -102,7 +102,7 @@ export const apiClient = {
         // Transforma a resposta da API para o formato esperado pelo frontend
         const backendData = response.data;
 
-        console.log('🔍 Backend Data:', backendData);
+
 
         const frontendData = {
             games: backendData.items.map((item: any, index: number) => ({
@@ -129,7 +129,7 @@ export const apiClient = {
             total: backendData.items.length,
         };
 
-        console.log('🎮 Frontend Data:', frontendData);
+
 
         return RecommendResponseSchema.parse(frontendData);
     },
@@ -146,13 +146,13 @@ export const apiClient = {
         flavors?: string[];
         limit?: number;
     }) => {
-        console.log('🔍 Sending discover request to backend:', discoverPayload);
+
 
         // Chama a nova API de descoberta
         const response = await http.post('/api/discover', discoverPayload);
         const backendData = response.data;
 
-        console.log('🎯 Discover Backend Data:', backendData);
+
 
         // Transforma para o formato esperado pelo frontend
         const frontendData = {
@@ -179,13 +179,13 @@ export const apiClient = {
             generatedAt: backendData.generatedAt,
         };
 
-        console.log('🎮 Discover Frontend Data:', frontendData);
+
 
         return RecommendResponseSchema.parse(frontendData);
     },
 
     getGameReviews: async (appId: number) => {
-        console.log('📝 Fetching reviews for app:', appId);
+
 
         try {
             const response = await http.get(`/api/games/${appId}/reviews`);

@@ -27,6 +27,7 @@ import { RecommendationsList } from '../../components/RecommendationsList/Recomm
 import { useLandingState } from '../../hooks/useLandingState';
 import { apiClient } from '../../api/client';
 import type { Game } from '../../api/schemas';
+import * as S from './LandingPage.styles';
 
 export const LandingPage = () => {
     const { filters, updateFilter, buildPayload, isValid } = useLandingState();
@@ -46,10 +47,10 @@ export const LandingPage = () => {
 
         try {
             const payload = buildPayload();
-            console.log('🎯 Recommendation payload:', payload);
+
 
             const response = await apiClient.recommend(payload);
-            console.log('🎯 Recommendations response:', response);
+
 
             setRecommendations(response.games);
             setShowRecommendations(true);
@@ -80,61 +81,18 @@ export const LandingPage = () => {
     };
 
     return (
-        <Box
-            sx={{
-                minHeight: '100vh',
-                background: 'linear-gradient(135deg, #0f1419 0%, #1a1f2e 50%, #2d3748 100%)',
-                position: 'relative',
-                overflow: 'hidden',
-            }}
-        >
+        <Box sx={S.pageContainer}>
             {/* Background Pattern */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundImage: `
-                        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%)
-                    `,
-                    zIndex: 0,
-                }}
-            />
+            <Box sx={S.backgroundPattern} />
 
-            <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: 4 }}>
+            <Container maxWidth="lg" sx={S.contentContainer}>
                 {/* Hero Section */}
                 <Fade in timeout={800}>
-                    <Box sx={{ textAlign: 'center', mb: 6 }}>
-                        <Typography
-                            variant="h2"
-                            sx={{
-                                fontWeight: 800,
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                backgroundClip: 'text',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                mb: 2,
-                                fontSize: { xs: '2.5rem', md: '3.5rem' },
-                                lineHeight: 1.2,
-                            }}
-                        >
+                    <Box sx={S.heroSection}>
+                        <Typography variant="h2" sx={S.heroTitle}>
                             Desenvolva Habilidades Jogando
                         </Typography>
-                        <Typography
-                            variant="h5"
-                            sx={{
-                                color: '#a0aec0',
-                                mb: 4,
-                                fontSize: { xs: '1.1rem', md: '1.3rem' },
-                                maxWidth: '600px',
-                                mx: 'auto',
-                                lineHeight: 1.6,
-                            }}
-                        >
+                        <Typography variant="h5" sx={S.heroSubtitle}>
                             Transforme seu tempo de jogo em desenvolvimento pessoal. Escolha o que você quer melhorar e nós encontramos o jogo perfeito.
                         </Typography>
                     </Box>
@@ -142,16 +100,8 @@ export const LandingPage = () => {
 
                 {/* Filters Section */}
                 <Slide direction="up" in timeout={1000}>
-                    <Card
-                        sx={{
-                            mb: 4,
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '20px',
-                            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-                        }}
-                    >
-                        <CardContent sx={{ p: 4 }}>
+                    <Card sx={S.filtersCard}>
+                        <CardContent sx={S.filtersCardContent}>
                             <LandingFilter
                                 filters={filters}
                                 onFilterChange={updateFilter}
@@ -160,8 +110,8 @@ export const LandingPage = () => {
                             {/* Selected Filters Display */}
                             {(filters.platformId || filters.skill || (filters.time?.length || 0) > 0) && (
                                 <Fade in timeout={500}>
-                                    <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                                        <Typography variant="h6" sx={{ color: '#ffffff', mb: 2, fontWeight: 600 }}>
+                                    <Box sx={S.selectedFiltersContainer}>
+                                        <Typography variant="h6" sx={S.selectedFiltersTitle}>
                                             Seu plano de treino gamer:
                                         </Typography>
                                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -169,22 +119,14 @@ export const LandingPage = () => {
                                                 <Chip
                                                     label={`Plataforma selecionada`}
                                                     icon={<Gamepad sx={{ fontSize: '1.2rem' }} />}
-                                                    sx={{
-                                                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                                                        color: '#ffffff',
-                                                        border: '1px solid rgba(102, 126, 234, 0.3)',
-                                                    }}
+                                                    sx={S.platformChip}
                                                 />
                                             )}
                                             {filters.skill && (
                                                 <Chip
                                                     label={`Habilidade: ${getSkillName(filters.skill)}`}
                                                     icon={<Lightbulb sx={{ fontSize: '1.2rem' }} />}
-                                                    sx={{
-                                                        backgroundColor: 'rgba(255, 119, 198, 0.2)',
-                                                        color: '#ffffff',
-                                                        border: '1px solid rgba(255, 119, 198, 0.3)',
-                                                    }}
+                                                    sx={S.skillChip}
                                                 />
                                             )}
                                             {filters.time?.map((time) => (
@@ -192,33 +134,21 @@ export const LandingPage = () => {
                                                     key={time}
                                                     label={`Duração: ${time}`}
                                                     icon={<Timer sx={{ fontSize: '1.2rem' }} />}
-                                                    sx={{
-                                                        backgroundColor: 'rgba(118, 75, 162, 0.2)',
-                                                        color: '#ffffff',
-                                                        border: '1px solid rgba(118, 75, 162, 0.3)',
-                                                    }}
+                                                    sx={S.timeChip}
                                                 />
                                             ))}
                                             {filters.minYear && filters.maxYear && (
                                                 <Chip
                                                     label={`${filters.minYear} - ${filters.maxYear}`}
                                                     icon={<DateRange sx={{ fontSize: '1.2rem' }} />}
-                                                    sx={{
-                                                        backgroundColor: 'rgba(237, 137, 54, 0.2)',
-                                                        color: '#ffffff',
-                                                        border: '1px solid rgba(237, 137, 54, 0.3)',
-                                                    }}
+                                                    sx={S.yearChip}
                                                 />
                                             )}
                                             {filters.isMultiplayer && (
                                                 <Chip
                                                     label="Multiplayer"
                                                     icon={<People sx={{ fontSize: '1.2rem' }} />}
-                                                    sx={{
-                                                        backgroundColor: 'rgba(66, 153, 225, 0.2)',
-                                                        color: '#ffffff',
-                                                        border: '1px solid rgba(66, 153, 225, 0.3)',
-                                                    }}
+                                                    sx={S.multiplayerChip}
                                                 />
                                             )}
                                             {filters.vibes?.map((vibe) => (
@@ -226,11 +156,7 @@ export const LandingPage = () => {
                                                     key={vibe}
                                                     label={vibe}
                                                     icon={<Mood sx={{ fontSize: '1.2rem' }} />}
-                                                    sx={{
-                                                        backgroundColor: 'rgba(72, 187, 120, 0.2)',
-                                                        color: '#ffffff',
-                                                        border: '1px solid rgba(72, 187, 120, 0.3)',
-                                                    }}
+                                                    sx={S.vibeChip}
                                                 />
                                             ))}
                                         </Stack>
@@ -241,38 +167,14 @@ export const LandingPage = () => {
                     </Card>
                 </Slide>
 
-
-
                 {/* Get Recommendations Button */}
                 <Slide direction="up" in timeout={1200}>
-                    <Box sx={{ textAlign: 'center', mb: 4 }}>
+                    <Box sx={S.generateButtonContainer}>
                         <Button
                             variant="contained"
                             onClick={handleGetRecommendations}
                             disabled={isLoading || !isValid}
-                            sx={{
-                                px: 6,
-                                py: 3,
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                color: '#ffffff',
-                                fontWeight: 800,
-                                fontSize: '1.3rem',
-                                textTransform: 'none',
-                                boxShadow: '0 12px 30px rgba(102, 126, 234, 0.4)',
-                                '&:hover': {
-                                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-                                    transform: 'translateY(-3px)',
-                                    boxShadow: '0 16px 35px rgba(102, 126, 234, 0.5)',
-                                },
-                                '&:disabled': {
-                                    background: 'rgba(255, 255, 255, 0.1)',
-                                    color: 'rgba(255, 255, 255, 0.5)',
-                                    transform: 'none',
-                                    boxShadow: 'none',
-                                },
-                                transition: 'background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease',
-                            }}
+                            sx={S.generateButton}
                         >
                             {isLoading ? 'Montando plano de treino...' : 'Gerar Recomendações'}
                         </Button>
@@ -283,19 +185,7 @@ export const LandingPage = () => {
                 {showRecommendations && (
                     <Fade in timeout={600}>
                         <Box>
-                            <Typography
-                                variant="h4"
-                                sx={{
-                                    color: '#ffffff',
-                                    fontWeight: 700,
-                                    mb: 3,
-                                    textAlign: 'center',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 2,
-                                }}
-                            >
+                            <Typography variant="h4" sx={S.recommendationsTitle}>
                                 <Star sx={{ fontSize: '2rem', color: '#667eea' }} />
                                 Jogos Recomendados
                             </Typography>
@@ -316,12 +206,7 @@ export const LandingPage = () => {
                     <Alert
                         onClose={() => setError(null)}
                         severity="error"
-                        sx={{
-                            background: 'rgba(239, 68, 68, 0.9)',
-                            color: '#ffffff',
-                            borderRadius: '12px',
-                            '& .MuiAlert-icon': { color: '#ffffff' },
-                        }}
+                        sx={S.errorAlert}
                     >
                         {error}
                     </Alert>

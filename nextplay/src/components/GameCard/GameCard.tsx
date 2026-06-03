@@ -16,6 +16,7 @@ import {
     Search,
 } from '@mui/icons-material';
 import type { Game } from '../../api/schemas';
+import * as S from './GameCard.styles';
 
 interface GameCardProps {
     game: Game;
@@ -34,91 +35,34 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
 
     return (
         <Card
-            sx={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '20px',
-                overflow: 'hidden',
-                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                cursor: 'pointer',
-                height: '100%', // Garantir que todos os cards tenham a mesma altura
-                display: 'flex',
-                flexDirection: 'column',
-                '&:hover': {
-                    transform: 'translateY(-8px) scale(1.02)',
-                    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.4)',
-                    borderColor: 'rgba(102, 126, 234, 0.3)',
-                },
-            }}
+            sx={S.card}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             {/* Posição da Recomendação */}
             {game.position && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 12,
-                        right: 12,
-                        zIndex: 2,
-                    }}
-                >
+                <Box sx={S.positionBadge}>
                     <Chip
                         label={`#${game.position}`}
                         size="small"
-                        sx={{
-                            background: 'rgba(102, 126, 234, 0.9)',
-                            color: '#ffffff',
-                            fontWeight: 700,
-                            fontSize: '0.75rem',
-                        }}
+                        sx={S.positionChip}
                     />
                 </Box>
             )}
             {/* Game Image with Hover Overlay */}
-            <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        height: 200,
-                        background: 'rgba(0, 0, 0, 0.1)',
-                    }}
-                >
+            <Box sx={S.imageContainer}>
+                <Box sx={S.imageWrapper}>
                     <CardMedia
                         component="img"
                         image={game.coverImage}
                         alt={game.name}
-                        sx={{
-                            maxWidth: '100%',
-                            maxHeight: '100%',
-                            objectFit: 'contain',
-                            padding: '8px',
-                            transition: 'transform 0.3s ease-in-out',
-                            '&:hover': {
-                                transform: 'scale(1.05)',
-                            },
-                        }}
+                        sx={S.media}
                     />
                 </Box>
 
                 {/* Hover Overlay with Steam Button */}
                 <Fade in={isHovered} timeout={200}>
-                    <Box
-                        sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'rgba(0, 0, 0, 0.8)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
+                    <Box sx={S.hoverOverlay}>
                         <Button
                             variant="contained"
                             startIcon={<Search />}
@@ -126,23 +70,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                                 e.stopPropagation();
                                 window.open(`https://www.google.com/search?q=${encodeURIComponent(game.name + ' game')}`, '_blank');
                             }}
-                            sx={{
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                color: '#ffffff',
-                                fontWeight: 700,
-                                px: 3,
-                                py: 1.5,
-                                borderRadius: '12px',
-                                textTransform: 'none',
-                                fontSize: '1rem',
-                                boxShadow: '0 8px 20px rgba(102, 126, 234, 0.4)',
-                                '&:hover': {
-                                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-                                    transform: 'translateY(-2px)',
-                                    boxShadow: '0 12px 25px rgba(102, 126, 234, 0.5)',
-                                },
-                                transition: 'background 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                            }}
+                            sx={S.searchButton}
                         >
                             PESQUISAR JOGO
                         </Button>
@@ -151,24 +79,10 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
 
             </Box>
 
-            <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Stack spacing={2} sx={{ flex: 1 }}>
+            <CardContent sx={S.cardContent}>
+                <Stack spacing={2} sx={S.stackContainer}>
                     {/* Game Title */}
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            color: '#ffffff',
-                            fontWeight: 700,
-                            fontSize: '1.1rem',
-                            lineHeight: 1.3,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            height: '2.6em', // Altura fixa para simetria
-                        }}
-                    >
+                    <Typography variant="h6" sx={S.gameTitle}>
                         {game.name}
                     </Typography>
 
@@ -178,31 +92,17 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                             <Chip
                                 label={`Meta: ${game.metaScore}`}
                                 size="small"
-                                sx={{
-                                    backgroundColor: getScoreColor(game.metaScore),
-                                    color: '#ffffff',
-                                    fontWeight: 600,
-                                    fontSize: '0.75rem',
-                                    height: 24,
-                                }}
+                                sx={S.getMetaScoreChip(getScoreColor(game.metaScore))}
                             />
                         )}
 
                     </Stack>
 
                     {/* Recommendation Reasons */}
-                    <Box sx={{ minHeight: '80px' }}> {/* Altura mínima fixa para simetria */}
+                    <Box sx={S.reasonsContainer}>
                         {game.reasons && game.reasons.length > 0 && (
                             <Box>
-                                <Typography variant="body2" sx={{
-                                    color: '#a0aec0',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 600,
-                                    mb: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                }}>
+                                <Typography variant="body2" sx={S.reasonsTitle}>
                                     <TrendingUp sx={{ fontSize: '0.8rem' }} />
                                     Por que recomendamos:
                                 </Typography>
@@ -212,18 +112,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                                             key={index}
                                             label={reason}
                                             size="small"
-                                            sx={{
-                                                backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                                                color: '#a0aec0',
-                                                border: '1px solid rgba(102, 126, 234, 0.3)',
-                                                fontWeight: 500,
-                                                fontSize: '0.7rem',
-                                                height: 20,
-                                                mb: 0.5,
-                                                '& .MuiChip-label': {
-                                                    px: 1,
-                                                },
-                                            }}
+                                            sx={S.reasonChip}
                                         />
                                     ))}
                                 </Stack>
@@ -237,23 +126,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                     variant="outlined"
                     startIcon={<Visibility />}
                     onClick={() => onViewDetails(game)}
-                    sx={{
-                        borderColor: 'rgba(102, 126, 234, 0.3)',
-                        color: '#667eea',
-                        fontWeight: 600,
-                        py: 1.5,
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        fontSize: '0.9rem',
-                        mt: 2, // Espaçamento do conteúdo acima
-                        '&:hover': {
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            color: '#ffffff',
-                            transform: 'translateY(-1px)',
-                        },
-                        transition: 'background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.2s ease-in-out',
-                    }}
+                    sx={S.actionButton}
                 >
                     Ver Detalhes
                 </Button>

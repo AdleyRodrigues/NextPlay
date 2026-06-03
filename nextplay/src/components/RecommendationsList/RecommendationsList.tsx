@@ -7,6 +7,7 @@ import {
 import { GameCard } from '../GameCard/GameCard';
 import { GameDetailsModal } from '../GameDetailsModal/GameDetailsModal';
 import type { Game } from '../../api/schemas';
+import * as S from './RecommendationsList.styles';
 
 interface RecommendationsListProps {
     games: Game[];
@@ -29,11 +30,11 @@ export const RecommendationsList: React.FC<RecommendationsListProps> = ({
         // Empty state
         if (!games || games.length === 0) {
             return (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="h6" sx={{ color: '#a0aec0', mb: 2 }}>
+                <Box sx={S.emptyStateContainer}>
+                    <Typography variant="h6" sx={S.emptyStateTitle}>
                         Nenhuma recomendação encontrada
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#a0aec0' }}>
+                    <Typography variant="body2" sx={S.emptyStateSubtitle}>
                         Tente ajustar seus filtros ou conectar sua conta Steam
                     </Typography>
                 </Box>
