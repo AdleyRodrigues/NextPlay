@@ -9,11 +9,9 @@ import {
     Chip,
     Stack,
     Fade,
-    Tooltip,
 } from '@mui/material';
 import {
     Visibility,
-    Star,
     TrendingUp,
     Search,
 } from '@mui/icons-material';
@@ -39,11 +37,10 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
             sx={{
                 position: 'relative',
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
-                backdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: '20px',
                 overflow: 'hidden',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 cursor: 'pointer',
                 height: '100%', // Garantir que todos os cards tenham a mesma altura
                 display: 'flex',
@@ -120,7 +117,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backdropFilter: 'blur(5px)',
                         }}
                     >
                         <Button
@@ -145,7 +141,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                                     transform: 'translateY(-2px)',
                                     boxShadow: '0 12px 25px rgba(102, 126, 234, 0.5)',
                                 },
-                                transition: 'all 0.2s ease-in-out',
+                                transition: 'background 0.2s ease-in-out, transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                             }}
                         >
                             PESQUISAR JOGO
@@ -191,20 +187,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                                 }}
                             />
                         )}
-                        {game.steamScore && (
-                            <Chip
-                                icon={<Star sx={{ fontSize: '0.8rem' }} />}
-                                label={`${game.steamScore}%`}
-                                size="small"
-                                sx={{
-                                    backgroundColor: '#4299e1',
-                                    color: '#ffffff',
-                                    fontWeight: 600,
-                                    fontSize: '0.75rem',
-                                    height: 24,
-                                }}
-                            />
-                        )}
+
                     </Stack>
 
                     {/* Recommendation Reasons */}
@@ -269,7 +252,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game, onViewDetails }) => {
                             color: '#ffffff',
                             transform: 'translateY(-1px)',
                         },
-                        transition: 'all 0.2s ease-in-out',
+                        transition: 'background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.2s ease-in-out',
                     }}
                 >
                     Ver Detalhes

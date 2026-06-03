@@ -45,8 +45,9 @@ public class RecommendationService
             var targetTags = MapSkillToTags(request.Skill);
             
             // 2. Buscar usando RAWG API
-            var targetTagsStr = string.Join(",", targetTags.tags.Concat(targetTags.genres));
-            var rawgGames = await _rawgService.GetGamesByTagsAsync(targetTagsStr, request.Limit * 2, CancellationToken.None);
+            var tagsStr = string.Join(",", targetTags.tags);
+            var genresStr = string.Join(",", targetTags.genres);
+            var rawgGames = await _rawgService.GetGamesByTagsAsync(tagsStr, genresStr, request.Limit * 2, request, CancellationToken.None);
 
             if (rawgGames == null || rawgGames.Count == 0)
             {
@@ -66,7 +67,7 @@ public class RecommendationService
                 // Salvar/Atualizar no banco como cache
                 var dbGame = await GetOrCreateGameInDbAsync(dGame);
 
-                var recommendation = await CreateRecommendationFromGameAsync(dbGame, dGame, request, targetTags);
+                var recommendation = CreateRecommendationFromGame(dbGame, dGame, request, targetTags);
                 if (recommendation != null)
                 {
                     recommendations.Add(recommendation);
@@ -125,7 +126,8 @@ public class RecommendationService
             AppId = dto.id,
             Name = dto.name ?? "Unknown Game",
             HeaderImage = dto.background_image,
-            Genres = string.Join(",", dto.genres?.Select(g => g.name) ?? Array.Empty<string>()),
+            Genres = string.Join(",", dto.genres?.Select(g => g.slug ?? g.name?.ToLowerInvariant()) ?? Array.Empty<string>()),
+            Tags = string.Join(",", dto.tags?.Select(t => t.slug ?? t.name?.ToLowerInvariant()) ?? Array.Empty<string>()),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -136,18 +138,17 @@ public class RecommendationService
         return newGame;
     }
 
-    private async Task<RecommendationItem?> CreateRecommendationFromGameAsync(Game game, NextPlay.Api.Infrastructure.Providers.RawgGameDto dto, RecommendRequest request, (string[] genres, string[] tags) targetTags)
+    private RecommendationItem? CreateRecommendationFromGame(Game game, NextPlay.Api.Infrastructure.Providers.RawgGameDto dto, RecommendRequest request, (string[] genres, string[] tags) targetTags)
     {
         try
         {
             var finalScores = new ScoresDto
             {
                 Metacritic = dto.metacritic ?? game.Scores?.Metacritic,
-                OpenCritic = game.Scores?.OpenCritic,
-                SteamPositivePct = game.Scores?.SteamPositivePct ?? 0
+                OpenCritic = game.Scores?.OpenCritic
             };
 
-            var score = CalculateSkillScore(game, finalScores, request);
+            var score = CalculateSkillScore(game, dto, finalScores, request, targetTags);
             var reasons = GenerateSkillReasons(game, finalScores, request);
 
             return new RecommendationItem
@@ -171,18 +172,55 @@ public class RecommendationService
         }
     }
 
-    private float CalculateSkillScore(Game game, ScoresDto scores, RecommendRequest request)
+    private float CalculateSkillScore(Game game, NextPlay.Api.Infrastructure.Providers.RawgGameDto dto, ScoresDto scores, RecommendRequest request, (string[] genres, string[] tags) skillTags)
     {
         var score = 0f;
 
-        // Quality Score (60%)
-        if (scores.Metacritic.HasValue) score += (scores.Metacritic.Value / 100f) * 0.4f;
-        if (scores.OpenCritic.HasValue) score += (scores.OpenCritic.Value / 100f) * 0.2f;
+        // Crítica - Max 30%
+        if (scores.Metacritic.HasValue) score += (scores.Metacritic.Value / 100f) * 0.20f;
+        if (scores.OpenCritic.HasValue) score += (scores.OpenCritic.Value / 100f) * 0.10f;
 
-        // Base score for simply being returned by the discovery engine
-        score += 0.4f;
+        // Affinity - Max 70%
+        var gameTags = dto.tags?.Select(t => t.slug ?? t.name?.ToLowerInvariant() ?? "").ToList() ?? new List<string>();
+        var gameGenres = dto.genres?.Select(g => g.slug ?? g.name?.ToLowerInvariant() ?? "").ToList() ?? new List<string>();
 
-        return Math.Min(score, 1f);
+        // 1. Skill Match (Max 35%)
+        int skillMatchCount = 0;
+        int skillTargetCount = skillTags.tags.Length + skillTags.genres.Length;
+
+        foreach(var t in skillTags.tags) if (gameTags.Contains(t.ToLowerInvariant()) || gameTags.Any(x => x.Contains(t.ToLowerInvariant()))) skillMatchCount++;
+        foreach(var g in skillTags.genres) if (gameGenres.Contains(g.ToLowerInvariant()) || gameGenres.Any(x => x.Contains(g.ToLowerInvariant()))) skillMatchCount++;
+        
+        float skillAffinity = skillTargetCount > 0 ? (float)skillMatchCount / skillTargetCount : 0.5f;
+        score += 0.35f * skillAffinity;
+
+        // 2. Vibe Match (Max 35%)
+        float vibeAffinity = 1f; // Se não pediu vibe, ganha full points
+        if (request.Vibes != null && request.Vibes.Count > 0)
+        {
+            int vibeMatchCount = 0;
+            int totalVibes = request.Vibes.Count;
+            foreach (var vibe in request.Vibes)
+            {
+                if (NextPlay.Api.Infrastructure.Providers.RawgService.VibeMapping.TryGetValue(vibe.ToLowerInvariant(), out var vTags))
+                {
+                    var mainVibeTag = vTags.First().ToLowerInvariant();
+                    if (gameTags.Contains(mainVibeTag) || gameTags.Any(x => x.Contains(mainVibeTag)) ||
+                        gameGenres.Contains(mainVibeTag) || gameGenres.Any(x => x.Contains(mainVibeTag)))
+                    {
+                        vibeMatchCount++;
+                    }
+                }
+            }
+            vibeAffinity = (float)vibeMatchCount / totalVibes;
+            
+            // Penalidade severa se não bateu as vibes
+            if (vibeAffinity < 1f) vibeAffinity -= 0.5f; 
+        }
+
+        score += 0.35f * vibeAffinity;
+
+        return Math.Max(0f, Math.Min(score, 1f));
     }
 
     private List<string> GenerateSkillReasons(Game game, ScoresDto scores, RecommendRequest request)
@@ -194,9 +232,16 @@ public class RecommendationService
         {
             "logica" => "Exercita fortemente o raciocínio lateral e resolução de problemas.",
             "reflexos" => "Exige alta agilidade e tempo de resposta rápido.",
-            "paciencia" => "Ensina resiliência através de desafios contínuos.",
+            "resiliencia" => "Ensina resiliência e controle emocional através de desafios contínuos.",
             "estrategia" => "Perfeito para desenvolver planejamento a longo prazo.",
             "cooperacao" => "Focado em trabalho em equipe e comunicação eficiente.",
+            "criatividade" => "Estimula o pensamento divergente e a livre autoexpressão criativa.",
+            "decisao" => "Exercita o pensamento crítico e a ponderação de dilemas e consequências morais.",
+            "memoria" => "Fortalece a memória espacial e o reconhecimento de padrões complexos.",
+            "foco" => "Ideal para praticar atenção plena, relaxamento ativo e estado de flow.",
+            "lideranca" => "Focado em coordenação de equipe, comunicação tática e liderança.",
+            "gestao" => "Desenvolve a capacidade de gerenciamento de recursos sob pressão e resolução de crises.",
+            "coordenacao" => "Aprimora significativamente a precisão e coordenação motora fina.",
             _ => "Recomendado para o seu desenvolvimento."
         };
         reasons.Add(skillReason);
@@ -215,13 +260,21 @@ public class RecommendationService
 
     private (string[] genres, string[] tags) MapSkillToTags(string skill)
     {
+        // Limitando a apenas 1 gênero e 1 tag principal para não criar uma query restritiva demais (RAWG usa AND entre vírgulas)
         return skill.ToLower() switch
         {
-            "logica" => (new[] { "puzzle", "strategy" }, new[] { "logic", "puzzle-platformer" }),
-            "reflexos" => (new[] { "action", "shooter", "fighting" }, new[] { "fast-paced", "bullet-hell" }),
-            "paciencia" => (new[] { "action", "rpg" }, new[] { "souls-like", "roguelike", "difficult" }),
-            "estrategia" => (new[] { "strategy", "simulation" }, new[] { "resource-management", "city-builder", "turn-based" }),
-            "cooperacao" => (new[] { "action", "adventure" }, new[] { "co-op", "multiplayer", "local-co-op" }),
+            "logica" => (new[] { "puzzle" }, new[] { "logic" }),
+            "reflexos" => (new[] { "shooter" }, new[] { "fast-paced" }),
+            "resiliencia" => (new[] { "action" }, new[] { "difficult" }),
+            "estrategia" => (new[] { "strategy" }, new[] { "turn-based" }),
+            "cooperacao" => (new[] { "action" }, new[] { "co-op" }),
+            "criatividade" => (new[] { "simulation" }, new[] { "sandbox" }),
+            "decisao" => (new[] { "role-playing-games-rpg" }, new[] { "choices-matter" }),
+            "memoria" => (new[] { "platformer" }, new[] { "metroidvania" }),
+            "foco" => (new[] { "adventure" }, new[] { "atmospheric" }),
+            "lideranca" => (new[] { "strategy" }, new[] { "tactical" }),
+            "gestao" => (new[] { "simulation" }, new[] { "management" }),
+            "coordenacao" => (new[] { "platformer" }, new[] { "precision-platformer" }),
             _ => (Array.Empty<string>(), Array.Empty<string>())
         };
     }

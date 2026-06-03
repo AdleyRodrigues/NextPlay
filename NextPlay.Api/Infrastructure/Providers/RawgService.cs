@@ -15,12 +15,12 @@ public sealed class RawgService : IRawgService
     private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
 
     // Mapeamento de vibes para tags/genres do RAWG
-    private static readonly Dictionary<string, string[]> VibeMapping = new()
+    public static readonly Dictionary<string, string[]> VibeMapping = new()
     {
-        ["relax"] = ["casual", "puzzle", "indie"],
+        ["relax"] = ["atmospheric", "casual", "puzzle", "indie"],
         ["historia"] = ["story-rich", "adventure", "rpg", "narrative"],
-        ["raiva"] = ["action", "shooter", "fighting", "fast-paced"],
-        ["intelecto"] = ["puzzle", "strategy", "tactics", "mystery"],
+        ["raiva"] = ["fast-paced", "action", "shooter", "fighting"],
+        ["intelecto"] = ["mystery", "puzzle", "strategy", "tactics"],
         ["competitivo"] = ["pvp", "competitive", "multiplayer", "esports"],
         ["coop"] = ["co-op", "online-co-op", "local-co-op", "multiplayer"],
         ["explorar"] = ["open-world", "exploration", "survival", "crafting"],
@@ -224,7 +224,6 @@ public sealed class RawgService : IRawgService
             image: game.background_image ?? "",
             metacritic: game.metacritic,
             criticRating: game.rating,
-            steamPositivePct: null,
             hltbMainHours: null,
             scoreTotal: 0, // Será calculado no CompositeCatalogService
             why: why.ToArray(),
@@ -267,19 +266,72 @@ public sealed class RawgService : IRawgService
         RawgNameDto[]? tags
     );
 
-    public sealed record RawgNameDto(string? name);
+    public sealed record RawgNameDto(string? name, string? slug);
     private sealed record RawgPlatformDto(RawgPlatformObj? platform);
     private sealed record RawgPlatformObj(string? name);
 
     // DTOs para discover
     private sealed record RawgDiscoverResponse(RawgGameDto[]? results);
     
-    public async Task<IReadOnlyList<RawgGameDto>> GetGamesByTagsAsync(string tags, int limit, CancellationToken ct = default)
+    public async Task<IReadOnlyList<RawgGameDto>> GetGamesByTagsAsync(string tags, string genres, int limit, NextPlay.Api.Api.DTOs.RecommendRequest request, CancellationToken ct = default)
     {
         var games = new List<RawgGameDto>();
         try
         {
-            var url = $"games?key={_opts.ApiKey}&tags={Uri.EscapeDataString(tags)}&page_size={limit}";
+            var queryParams = new List<string>();
+            queryParams.Add($"key={_opts.ApiKey}");
+            
+            var allTags = new List<string>();
+            if (!string.IsNullOrWhiteSpace(tags)) allTags.Add(tags);
+
+            var allGenres = new List<string>();
+            if (!string.IsNullOrWhiteSpace(genres)) allGenres.Add(genres);
+
+            if (request.PlatformId > 0)
+            {
+                queryParams.Add($"platforms={request.PlatformId}");
+            }
+            
+            if (request.Vibes != null && request.Vibes.Count > 0)
+            {
+                // Pega apenas a PRIMEIRA tag de cada vibe para evitar restrição excessiva (pois o RAWG usa AND)
+                var vibeTags = request.Vibes
+                    .Where(v => VibeMapping.ContainsKey(v))
+                    .Select(v => VibeMapping[v].First());
+                allTags.AddRange(vibeTags);
+            }
+
+            if (request.IsMultiplayer.HasValue)
+            {
+                if (request.IsMultiplayer.Value) allTags.Add("multiplayer"); // Removido co-op para não obrigar que seja ambos
+                else allTags.Add("singleplayer");
+            }
+            
+            if (allTags.Any())
+            {
+                queryParams.Add($"tags={Uri.EscapeDataString(string.Join(",", allTags.Distinct()))}");
+            }
+            if (allGenres.Any())
+            {
+                queryParams.Add($"genres={Uri.EscapeDataString(string.Join(",", allGenres.Distinct()))}");
+            }
+
+            if (request.MinYear.HasValue && request.MaxYear.HasValue)
+            {
+                queryParams.Add($"dates={request.MinYear}-01-01,{request.MaxYear}-12-31");
+            }
+            else if (request.MinYear.HasValue)
+            {
+                queryParams.Add($"dates={request.MinYear}-01-01,{DateTime.UtcNow.Year}-12-31");
+            }
+            else if (request.MaxYear.HasValue)
+            {
+                queryParams.Add($"dates=1970-01-01,{request.MaxYear}-12-31");
+            }
+
+            queryParams.Add($"page_size={limit}");
+
+            var url = $"games?{string.Join("&", queryParams)}";
             using var response = await _http.GetAsync(url, ct);
             if (!response.IsSuccessStatusCode)
             {
@@ -310,5 +362,6 @@ public sealed record RawgGameDto(
     string? background_image,
     int? metacritic,
     double? rating,
-    NextPlay.Api.Infrastructure.Providers.RawgService.RawgNameDto[]? genres
+    NextPlay.Api.Infrastructure.Providers.RawgService.RawgNameDto[]? genres,
+    NextPlay.Api.Infrastructure.Providers.RawgService.RawgNameDto[]? tags
 );

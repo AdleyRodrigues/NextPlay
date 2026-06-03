@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { http } from './http';
-import { RefreshResponseSchema, SavePreferencesSchema, RecommendResponseSchema, FeedbackSchema, type Preferences, type Feedback } from './schemas';
+import { SavePreferencesSchema, RecommendResponseSchema, FeedbackSchema, type Preferences, type Feedback } from './schemas';
 import type { RecommendationPayload } from '../hooks/useLandingState';
 
 export const apiClient = {
@@ -23,7 +24,7 @@ export const apiClient = {
                 playerInfo: backendData.playerInfo
             };
 
-            return RefreshResponseSchema.parse(frontendData);
+            return frontendData;
         } catch (error) {
             console.error('❌ Error refreshing Steam library:', error);
             throw error;

@@ -11,7 +11,7 @@ public class Scores
 
     public int? OpenCritic { get; set; }
 
-    public int? SteamPositivePct { get; set; } // Percentage of positive Steam reviews
+
 
     public int? SteamPositive { get; set; } // Count of positive Steam reviews
 

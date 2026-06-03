@@ -15,7 +15,6 @@ export const Header: React.FC = () => {
             position="fixed"
             sx={{
                 background: 'rgba(15, 20, 25, 0.95)',
-                backdropFilter: 'blur(20px)',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
                 zIndex: 1300,

@@ -17,7 +17,6 @@ import {
 import {
     Close,
     AccessTime,
-    Star,
     Search,
     Lightbulb,
 } from '@mui/icons-material';
@@ -263,20 +262,7 @@ export const GameDetailsModal: React.FC<GameDetailsModalProps> = ({
                                                 }}
                                             />
                                         )}
-                                        {game.steamScore && (
-                                            <Chip
-                                                icon={<Star sx={{ fontSize: '1rem' }} />}
-                                                label={`${game.steamScore}%`}
-                                                sx={{
-                                                    backgroundColor: '#4299e1',
-                                                    color: '#ffffff',
-                                                    fontWeight: 700,
-                                                    fontSize: '0.9rem',
-                                                    px: 2,
-                                                    py: 1,
-                                                }}
-                                            />
-                                        )}
+
                                     </Stack>
                                 </Box>
 

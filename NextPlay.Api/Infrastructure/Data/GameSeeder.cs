@@ -53,7 +53,6 @@ public class GameSeeder
                     AppId = gameData.AppId,
                     Metacritic = gameData.MetacriticScore,
                     OpenCritic = gameData.OpenCriticScore,
-                    SteamPositivePct = gameData.SteamScore,
                     UpdatedAt = DateTime.UtcNow
                 };
             }

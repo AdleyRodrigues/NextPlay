@@ -18,6 +18,9 @@ import {
     Star,
     Timer,
     Gamepad,
+    DateRange,
+    Mood,
+    People,
 } from '@mui/icons-material';
 import { LandingFilter } from '../../components/LandingFilter/LandingFilter';
 import { RecommendationsList } from '../../components/RecommendationsList/RecommendationsList';
@@ -62,9 +65,16 @@ export const LandingPage = () => {
         const skills: Record<string, string> = {
             'logica': 'Lógica',
             'reflexos': 'Reflexos',
-            'paciencia': 'Paciência',
+            'resiliencia': 'Resiliência',
             'estrategia': 'Estratégia',
             'cooperacao': 'Cooperação',
+            'criatividade': 'Criatividade',
+            'decisao': 'Decisão',
+            'memoria': 'Memória',
+            'foco': 'Foco',
+            'lideranca': 'Liderança',
+            'gestao': 'Gestão de Crise',
+            'coordenacao': 'Coordenação Motora Fina',
         };
         return skills[skill] || skill;
     };
@@ -136,7 +146,6 @@ export const LandingPage = () => {
                         sx={{
                             mb: 4,
                             background: 'rgba(255, 255, 255, 0.05)',
-                            backdropFilter: 'blur(20px)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
                             borderRadius: '20px',
                             boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
@@ -190,6 +199,40 @@ export const LandingPage = () => {
                                                     }}
                                                 />
                                             ))}
+                                            {filters.minYear && filters.maxYear && (
+                                                <Chip
+                                                    label={`${filters.minYear} - ${filters.maxYear}`}
+                                                    icon={<DateRange sx={{ fontSize: '1.2rem' }} />}
+                                                    sx={{
+                                                        backgroundColor: 'rgba(237, 137, 54, 0.2)',
+                                                        color: '#ffffff',
+                                                        border: '1px solid rgba(237, 137, 54, 0.3)',
+                                                    }}
+                                                />
+                                            )}
+                                            {filters.isMultiplayer && (
+                                                <Chip
+                                                    label="Multiplayer"
+                                                    icon={<People sx={{ fontSize: '1.2rem' }} />}
+                                                    sx={{
+                                                        backgroundColor: 'rgba(66, 153, 225, 0.2)',
+                                                        color: '#ffffff',
+                                                        border: '1px solid rgba(66, 153, 225, 0.3)',
+                                                    }}
+                                                />
+                                            )}
+                                            {filters.vibes?.map((vibe) => (
+                                                <Chip
+                                                    key={vibe}
+                                                    label={vibe}
+                                                    icon={<Mood sx={{ fontSize: '1.2rem' }} />}
+                                                    sx={{
+                                                        backgroundColor: 'rgba(72, 187, 120, 0.2)',
+                                                        color: '#ffffff',
+                                                        border: '1px solid rgba(72, 187, 120, 0.3)',
+                                                    }}
+                                                />
+                                            ))}
                                         </Stack>
                                     </Box>
                                 </Fade>
@@ -197,6 +240,8 @@ export const LandingPage = () => {
                         </CardContent>
                     </Card>
                 </Slide>
+
+
 
                 {/* Get Recommendations Button */}
                 <Slide direction="up" in timeout={1200}>
@@ -226,7 +271,7 @@ export const LandingPage = () => {
                                     transform: 'none',
                                     boxShadow: 'none',
                                 },
-                                transition: 'all 0.3s ease',
+                                transition: 'background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease',
                             }}
                         >
                             {isLoading ? 'Montando plano de treino...' : 'Gerar Recomendações'}

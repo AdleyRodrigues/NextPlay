@@ -196,8 +196,7 @@ internal sealed class IgdbService : IIgdbService
             store: "IGDB",
             image: imageUrl,
             metacritic: null, // IGDB não tem metacritic direto
-            criticRating: criticRating,
-            steamPositivePct: null,
+            criticRating: game.total_rating != null ? (int)Math.Round(game.total_rating.Value) : null,
             hltbMainHours: hltbHours,
             scoreTotal: 0, // Será calculado no CompositeCatalogService
             why: why.ToArray(),

@@ -31,7 +31,7 @@ public class ScoresDto
 {
     public int? Metacritic { get; set; }
     public int? OpenCritic { get; set; }
-    public int SteamPositivePct { get; set; }
+
 }
 
 public class HltbDto

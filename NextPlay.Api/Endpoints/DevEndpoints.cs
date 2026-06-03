@@ -42,11 +42,11 @@ public static class DevEndpoints
             // Add test scores
             var scores = new[]
             {
-                new Scores { AppId = 367520, Metacritic = 90, OpenCritic = 84, SteamPositivePct = 97, UpdatedAt = DateTime.UtcNow },
-                new Scores { AppId = 413150, Metacritic = 89, OpenCritic = 86, SteamPositivePct = 98, UpdatedAt = DateTime.UtcNow },
-                new Scores { AppId = 1145360, Metacritic = 93, OpenCritic = 84, SteamPositivePct = 98, UpdatedAt = DateTime.UtcNow },
-                new Scores { AppId = 632470, Metacritic = 97, OpenCritic = 91, SteamPositivePct = 95, UpdatedAt = DateTime.UtcNow },
-                new Scores { AppId = 504230, Metacritic = 94, OpenCritic = 92, SteamPositivePct = 97, UpdatedAt = DateTime.UtcNow }
+                new Scores { AppId = 367520, Metacritic = 90, OpenCritic = 84, UpdatedAt = DateTime.UtcNow },
+                new Scores { AppId = 413150, Metacritic = 89, OpenCritic = 86, UpdatedAt = DateTime.UtcNow },
+                new Scores { AppId = 1145360, Metacritic = 93, OpenCritic = 84, UpdatedAt = DateTime.UtcNow },
+                new Scores { AppId = 632470, Metacritic = 97, OpenCritic = 91, UpdatedAt = DateTime.UtcNow },
+                new Scores { AppId = 504230, Metacritic = 94, OpenCritic = 92, UpdatedAt = DateTime.UtcNow }
             };
 
             context.Scores.AddRange(scores);

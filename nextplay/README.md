@@ -1,93 +1,57 @@
-# NextPlay
+<div align="center">
+  <a href="../readme.md">🏠 Visão Geral</a> |
+  <b>🖥️ Frontend (React)</b> |
+  <a href="../NextPlay.Api/README.md">⚙️ Backend (.NET)</a>
+</div>
 
-Uma aplicação web para descobrir seus próximos jogos favoritos baseado no seu perfil Steam.
+---
 
-## 🚀 Tecnologias
+# Frontend - Gameterapia (React + Vite)
 
-- **React 18** + **TypeScript**
-- **Vite** - Build tool
-- **Material UI (MUI)** - Biblioteca de componentes
-- **React Router v6** - Navegação
-- **React Query (TanStack Query)** - Gerenciamento de estado e cache
-- **Axios** - Cliente HTTP
-- **Zod** - Validação de schemas
+A interface de usuário do Gameterapia foi desenvolvida com foco em proporcionar uma experiência premium, reativa e intuitiva. 
 
-## 📁 Estrutura do Projeto
+## 🎨 Visão Geral da Interface
 
-```
-src/
-├── api/
-│   ├── client.ts          # Funções mock de API
-│   ├── http.ts            # Instância do axios
-│   └── schemas.ts         # Schemas Zod
-├── components/
-│   ├── EmptyState/        # Componente para estados vazios
-│   ├── GameCard/          # Card de jogo
-│   ├── Header/            # Header da aplicação
-│   └── PreferencesForm/   # Formulário de preferências
-├── context/
-│   └── SteamContext.tsx   # Contexto do Steam ID
-├── hooks/
-│   ├── useApi.ts          # Hooks para React Query
-│   └── useToast.ts        # Hook para notificações
-├── pages/
-│   ├── History/           # Página de histórico
-│   ├── Onboarding/        # Página de onboarding
-│   ├── Ranking/           # Página de ranking
-│   └── Settings/          # Página de configurações
-├── routes/
-│   └── AppRoutes.tsx      # Definição de rotas
-├── theme/
-│   └── index.ts           # Configuração de tema
-├── utils/
-│   └── format.ts          # Utilitários de formatação
-├── App.tsx                # Componente principal
-└── main.tsx               # Entry point
+O painel principal ("Treino Gamer") é um laboratório de configuração onde o usuário constrói sua solicitação de recomendação:
+
+- **Plataformas:** Seleção de onde o usuário joga (PC, PS5, Xbox, Switch).
+- **Habilidades Cognitivas:** 10 opções de habilidades mapeadas (Lógica, Estratégia, Reflexos, etc.) com descrições dinâmicas dos benefícios neurológicos.
+- **Vibes (Filtro Psicológico):** Filtros imersivos como "História", "Relaxante", "Frenético" ou "Retrô" que atuam diretamente na formulação da nota do jogo.
+- **Era do Jogo:** Um slider duplo que permite limitar o ano de lançamento dos jogos (ex: 1990 a 2026).
+
+## 🛠️ Stack Tecnológica
+
+- **React 18** e **TypeScript:** Para uma interface rápida, segura e livre de erros em tempo de execução.
+- **Vite:** Ferramenta de build que garante inicialização e HMR (Hot Module Replacement) instantâneos.
+- **Material-UI (MUI):** Sistema de design utilizado para a criação de componentes padronizados (Chips, Sliders, Cards, Skeletons).
+- **React Query:** Para o gerenciamento de chamadas assíncronas ao backend, garantindo cache e estados de carregamento fluidos.
+- **Axios:** Cliente HTTP para comunicação com a API .NET.
+- **CSS Vanilla (Variáveis e Flexbox):** Utilizado para polimentos estéticos refinados e animações de hover que dão vida à interface.
+
+## 🏗️ Estrutura de Componentes
+
+```mermaid
+graph TD
+    A[Landing Page] --> B[Header Premium]
+    A --> C[Painel de Filtros]
+    C --> D[Chip Selectors Plataforma, Habilidade, Vibe]
+    C --> E[Era Range Slider]
+    A --> F[Botão Gerar Recomendações]
+    A --> G[Grid de Resultados]
+    G --> H[Skeleton Loaders de Jogo]
+    G --> I[Game Cards Imagens, Título, Metacritic]
 ```
 
-## 🛠️ Instalação
+## 🚀 Como Executar
 
-1. Clone o repositório
-2. Instale as dependências:
+Estando dentro da pasta `nextplay`:
 
-   ```bash
-   pnpm install
-   ```
+1. Instale as dependências:
+```bash
+pnpm install
+```
 
-3. Configure as variáveis de ambiente:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-4. Execute o projeto:
-
-   ```bash
-   pnpm dev
-   ```
-
-## 🎨 Funcionalidades
-
-- **Tema escuro/claro** - Toggle entre temas
-- **Autenticação Steam** - Login com Steam ID
-- **Recomendações personalizadas** - Baseadas no perfil Steam
-- **Histórico de jogos** - Visualização dos jogos jogados
-- **Configuração de preferências** - Personalização das recomendações
-- **Feedback de jogos** - Sistema de like/dislike
-
-## 📱 Rotas
-
-- `/onboarding` - Página inicial para configurar Steam ID
-- `/` - Página principal com recomendações
-- `/history` - Histórico de jogos
-- `/settings` - Configurações e preferências
-
-## 🔧 Desenvolvimento
-
-- **pnpm dev** - Inicia o servidor de desenvolvimento
-- **pnpm build** - Gera build de produção
-- **pnpm preview** - Preview do build de produção
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT.
+2. Execute o servidor de desenvolvimento:
+```bash
+pnpm dev
+```

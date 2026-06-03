@@ -5,6 +5,10 @@ export interface LandingFilters {
     skill?: string;
     time?: string[];
     limit?: number;
+    minYear?: number;
+    maxYear?: number;
+    vibes?: string[];
+    isMultiplayer?: boolean;
 }
 
 export interface RecommendationPayload {
@@ -12,12 +16,19 @@ export interface RecommendationPayload {
     skill: string;
     time: string;
     limit: number;
+    minYear?: number;
+    maxYear?: number;
+    vibes?: string[];
+    isMultiplayer?: boolean;
 }
 
 export const useLandingState = () => {
     const [filters, setFilters] = useState<LandingFilters>({
         time: [],
         limit: 20,
+        minYear: 1990,
+        maxYear: new Date().getFullYear(),
+        vibes: [],
     });
 
     const updateFilter = <K extends keyof LandingFilters>(
@@ -37,6 +48,10 @@ export const useLandingState = () => {
             skill: filters.skill || '',
             time: filters.time?.join(',') || '',
             limit: filters.limit || 20,
+            minYear: filters.minYear,
+            maxYear: filters.maxYear,
+            vibes: filters.vibes,
+            isMultiplayer: filters.isMultiplayer,
         };
     };
 
@@ -44,6 +59,9 @@ export const useLandingState = () => {
         setFilters({
             time: [],
             limit: 20,
+            minYear: 1990,
+            maxYear: new Date().getFullYear(),
+            vibes: [],
         });
     };
 

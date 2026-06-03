@@ -32,8 +32,8 @@ public class ScoresService : IScoresService
         // Verificar cache primeiro (cache por 1 hora)
         if (_cache.TryGetValue(cacheKey, out GameScores? cachedScores))
         {
-            _logger.LogInformation("🎯 [GetGameScoresAsync] Cache hit for app {AppId} - {GameName}: Meta={Meta}, OC={OC}, Steam={Steam}",
-                appId, gameName, cachedScores?.Metacritic, cachedScores?.OpenCritic, cachedScores?.SteamPositivePct);
+            _logger.LogInformation("🎯 [GetGameScoresAsync] Cache hit for app {AppId} - {GameName}: Meta={Meta}, OC={OC}",
+                appId, gameName, cachedScores?.Metacritic, cachedScores?.OpenCritic);
             return cachedScores;
         }
 
@@ -51,14 +51,13 @@ public class ScoresService : IScoresService
             var openCriticScore = await GetOpenCriticScoreAsync(gameName, cancellationToken);
             scores.OpenCritic = openCriticScore;
 
-            // 3. Steam Score removido (Não temos mais a biblioteca Steam)
-            scores.SteamPositivePct = null;
+
 
             // Cache por 1 hora
             _cache.Set(cacheKey, scores, TimeSpan.FromHours(1));
 
-            _logger.LogInformation("✅ [GetGameScoresAsync] Fetched scores for {GameName}: Meta={Metacritic}, OC={OpenCritic}, Steam={Steam}",
-                gameName, scores.Metacritic, scores.OpenCritic, scores.SteamPositivePct);
+            _logger.LogInformation("✅ [GetGameScoresAsync] Fetched scores for {GameName}: Meta={Metacritic}, OC={OpenCritic}",
+                gameName, scores.Metacritic, scores.OpenCritic);
 
             return scores;
         }
